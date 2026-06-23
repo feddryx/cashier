@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Aplikasi Kasir</title>
+<script>
+  (function() {
+    try {
+      const data = JSON.parse(localStorage.getItem('kasir-fyx') || '{}');
+      const theme = data.theme || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch(e) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2EAD3;
+  --bg-2: #E8DCBE;
+  --surface: #FFFBF0;
+  --surface-2: #F7EFDA;
+  --ink: #1F1410;
+  --ink-2: #4A3528;
+  --muted: #8B7355;
+  --line: #DDD0AE;
+  --line-2: #C9B988;
+  --accent: #C75B3C;
+  --accent-dark: #A04229;
+  --accent-soft: #F5D9CE;
+  --forest: #2D5A3D;
+  --forest-soft: #D6E5DC;
+  --gold: #B8860B;
+  --danger: #B23A2C;
+  --danger-soft: #F5D6D0;
+  --header-bg: rgba(242,234,211,0.92);
+  --shadow: 0 8px 24px -6px rgba(31,20,16,0.12);
+}
+
+[data-theme="dark"] {
+  --bg: #161310;
+  --bg-2: #1E1A15;
+  --surface: #211D17;
+  --surface-2: #292520;
+  --ink: #E6DBC4;
+  --ink-2: #C9BEA6;
+  --muted: #948873;
+  --line: #2E2820;
+  --line-2: #3D362B;
+  --accent: #D97757;
+  --accent-dark: #BF6347;
+  --accent-soft: #3A211A;
+  --forest: #6BA580;
+  --forest-soft: #1E2D23;
+  --gold: #D9A061;
+  --danger: #C96859;
+  --danger-soft: #321B19;
+  --header-bg: rgba(22,19,16,0.92);
+  --shadow: 0 8px 24px -6px rgba(0,0,0,0.45);
+}
+
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  overflow-x: clip;
+  transition: background-color 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 70% 40% at 50% -5%, rgba(199,91,60,0.06), transparent),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(45,90,61,0.04), transparent);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(ellipse 70% 40% at 50% -5%, rgba(217,119,87,0.05), transparent),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(107,165,128,0.04), transparent);
+}
+
+.font-display { font-family: 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.02em; }
+.font-num { font-family: 'Space Grotesk', system-ui, sans-serif; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; letter-spacing: -0.01em; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.tab-btn { transition: all 0.2s ease; color: var(--ink-2); }
+.tab-btn.active { background: var(--ink); color: var(--bg); }
+
+.cat-pill { transition: all 0.18s ease; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2); white-space: nowrap; }
+.cat-pill:hover { border-color: var(--ink-2); }
+.cat-pill.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.menu-card {
+  transition: all 0.18s ease;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+}
+.menu-card:hover { border-color: var(--ink-2); box-shadow: var(--shadow); transform: translateY(-2px); }
+.menu-card:active { transform: translateY(0) scale(0.98); }
+.menu-card.unavailable { opacity: 0.4; filter: grayscale(0.4); }
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@keyframes slideIn { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.cart-item { animation: slideIn 0.2s ease-out; }
+.cart-qty-input {
+  -moz-appearance: textfield;
+  outline: none;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  padding: 2px 0;
+  transition: all 0.15s;
+  text-align: center;
+  background: transparent;
+  font-family: 'Space Grotesk', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.cart-qty-input:focus {
+  border-color: var(--ink);
+  background: var(--bg);
+}
+.cart-qty-input::-webkit-outer-spin-button,
+.cart-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.btn-primary { background: var(--ink); color: var(--bg); transition: all 0.18s; }
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-accent { background: var(--accent); color: white; transition: all 0.18s; }
+.btn-accent:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn-accent:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+.btn-ghost { background: transparent; border: 1.5px solid var(--line); color: var(--ink-2); transition: all 0.18s; }
+.btn-ghost:hover { border-color: var(--ink); color: var(--ink); background: var(--surface); }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-danger { background: var(--danger-soft); color: var(--danger); transition: all 0.18s; }
+.btn-danger:hover { background: var(--danger); color: white; }
+
+.input-field { background: var(--surface); border: 1.5px solid var(--line); color: var(--ink); transition: all 0.18s; font-family: inherit; }
+.input-field:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(31,20,16,0.06); }
+[data-theme="dark"] .input-field:focus { box-shadow: 0 0 0 3px rgba(255,255,255,0.05); }
+.input-field::placeholder { color: var(--muted); }
+.input-field:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-overlay { animation: overlayIn 0.18s ease-out; }
+.modal-content { animation: modalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; flex-direction: column; max-height: calc(100dvh - 2rem); }
+.modal-body { flex: 1; overflow-y: auto; }
+
+@keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+.toast { animation: toastIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.toast.removing { animation: toastOut 0.22s ease-in forwards; }
+
+@keyframes tabIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.tab-content { animation: tabIn 0.22s ease-out; }
+
+.receipt { background: white; color: #1F1410; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.25); }
+
+.bottom-nav { background: var(--surface); border-top: 1.5px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+.bottom-nav-btn { transition: all 0.18s; color: var(--muted); }
+.bottom-nav-btn.active { color: var(--accent); }
+.bottom-nav-btn.active .nav-icon { transform: translateY(-2px) scale(1.12); }
+.nav-icon { transition: transform 0.18s; }
+
+.floating-cart { box-shadow: 0 8px 24px -4px rgba(31,20,16,0.35); }
+
+.sheet { transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); }
+.sheet.open { transform: translateY(0); }
+
+.quick-amt { background: var(--surface); border: 1.5px solid var(--line); transition: all 0.12s; color: var(--ink); }
+.quick-amt:hover { border-color: var(--ink); }
+.quick-amt:active { transform: scale(0.95); }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+
+.scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
+.scroll-x::-webkit-scrollbar { display: none; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.stats-card { background: var(--surface); border: 1.5px solid var(--line); position: relative; overflow: hidden; }
+.stats-card::before { content: ''; position: absolute; top: 0; right: 0; width: 70px; height: 70px; background: radial-gradient(circle at top right, var(--accent-soft), transparent 70%); opacity: 0.35; pointer-events: none; }
+
+.logo-mark { background: var(--ink); color: var(--bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); overflow: hidden; flex-shrink: 0; }
+.logo-mark img { width: 100%; height: 100%; object-fit: cover; }
+
+.icon-tile { border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.mobile-pad { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+@media (min-width: 1024px) { .mobile-pad { padding-bottom: 2rem; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+select.input-field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238B7355' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; appearance: none; }
+[data-theme="dark"] select.input-field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23948873' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
+
+input[type="date"].date-empty {
+  width: 38px;
+  min-width: 38px;
+  padding-left: 0;
+  padding-right: 0;
+  color: transparent;
+  overflow: hidden;
+}
+input[type="date"].date-empty::-webkit-datetime-edit {
+  display: none;
+}
+input[type="date"].date-empty::-webkit-calendar-picker-indicator {
+  display: block;
+  margin: auto;
+  cursor: pointer;
+  opacity: 0.6;
+}
+input[type="date"].date-empty:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.balance-toggle-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+  color: var(--muted);
+}
+.balance-toggle-btn:hover { opacity: 0.6; }
+
+#menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.625rem;
+}
+@media (min-width: 640px) { 
+  #menu-grid { gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } 
+}
+
+#app-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  transition: opacity 0.3s ease;
+}
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.pagination-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.75rem; }
+.pagination-info { font-size: 0.75rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="app-loader"><div class="loader-spinner"></div></div>
+
+<div id="onboarding" class="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto" style="background:var(--bg); display:none;">
+  <div class="w-full max-w-md rounded-2xl p-6 sm:p-8 my-auto" style="background:var(--surface); border:1.5px solid var(--line); box-shadow:var(--shadow);">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style="background:var(--ink); color:var(--bg);">
+        <i data-lucide="store" class="w-8 h-8"></i>
+      </div>
+      <h2 class="font-display font-bold text-2xl">Selamat Datang</h2>
+      <p class="text-sm mt-1.5" style="color:var(--muted);">Mari atur toko Anda untuk memulai</p>
+    </div>
+    <form id="onboarding-form" class="space-y-4">
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Nama Toko *</label>
+        <input id="onb-name" type="text" required placeholder="cth: Warung Bu Tini" class="input-field w-full mt-1.5 px-4 py-3 rounded-xl text-sm font-medium" />
+      </div>
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Logo Toko (opsional)</label>
+        <div class="mt-1.5 flex items-center gap-3">
+          <div id="onb-logo-preview" class="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden" style="background:var(--bg); border:1.5px dashed var(--line-2);">
+            <i data-lucide="image" class="w-5 h-5" style="color:var(--muted);"></i>
+          </div>
+          <div class="flex-1 flex items-center gap-2">
+            <input id="onb-logo" type="file" accept="image/*" class="hidden" />
+            <button type="button" id="onb-logo-btn" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold">Pilih Gambar</button>
+            <button type="button" id="onb-logo-remove" class="text-xs font-semibold hidden" style="color:var(--danger);">Hapus</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Modal Awal Kas</label>
+        <input id="onb-balance" type="number" inputmode="numeric" value="0" min="0" class="input-field w-full mt-1.5 px-4 py-3 rounded-xl text-sm font-num font-bold" />
+        <p class="text-xs mt-1" style="color:var(--muted);">Boleh diisi 0, bisa diatur nanti di tab Kas</p>
+      </div>
+      <button type="submit" class="btn-primary w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+        Mulai Berjualan
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<header class="fixed top-0 left-0 right-0 z-40 backdrop-blur-md" style="background:var(--header-bg); border-bottom:1.5px solid var(--line);">
+  <div class="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
+      <button id="store-info-btn" class="flex items-center gap-2.5 min-w-0 flex-1 sm:flex-initial text-left">
+        <div id="header-logo" class="logo-mark w-9 h-9 sm:w-10 sm:h-10 text-base font-display font-bold"></div>
+        <div class="leading-tight min-w-0">
+          <h1 id="header-store-name" class="font-display font-bold text-sm sm:text-lg tracking-tight truncate" style="color:var(--ink);">—</h1>
+          <p class="text-[10px] sm:text-xs font-medium truncate" style="color:var(--muted);" id="header-date">—</p>
+        </div>
+      </button>
+
+      <nav class="hidden lg:flex items-center gap-1 p-1 rounded-xl border" style="border-color:var(--line); background:var(--surface);">
+        <button data-tab="pos" class="tab-btn active px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
+          <i data-lucide="store" class="w-4 h-4"></i><span>Kasir</span>
+        </button>
+        <button data-tab="menu" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
+          <i data-lucide="scroll-text" class="w-4 h-4"></i><span>Menu</span>
+        </button>
+        <button data-tab="history" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
+          <i data-lucide="receipt" class="w-4 h-4"></i><span>Riwayat</span>
+        </button>
+        <button data-tab="cash" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
+          <i data-lucide="wallet" class="w-4 h-4"></i><span>Kas</span>
+        </button>
+        <button data-tab="reports" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Laporan</span>
+        </button>
+      </nav>
+
+      <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div class="hidden sm:flex flex-col items-end leading-tight">
+          <div class="flex items-center gap-1">
+            <span class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--muted);">Saldo Kas</span>
+          </div>
+          <button id="balance-toggle" class="balance-toggle-btn flex items-center gap-1" title="Sembunyikan saldo">
+            <i data-lucide="eye" class="w-3 h-3" id="balance-toggle-icon"></i>
+            <span class="font-num font-bold text-sm" id="header-balance" style="color:var(--forest);">Rp 0</span>
+          </button>
+        </div>
+        <button id="theme-toggle" class="w-9 h-9 rounded-lg flex items-center justify-center transition-all" style="background:var(--surface); border:1.5px solid var(--line);" title="Ganti tema">
+          <i data-lucide="moon" class="w-4 h-4" id="theme-icon"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8 pt-[4.5rem] sm:pt-[5.25rem] mobile-pad">
+
+  <section id="tab-pos" class="tab-panel active">
+    <div class="lg:pr-[360px]">
+      <div class="min-w-0">
+        <div class="flex gap-2 mb-3">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style="color:var(--muted);"></i>
+            <input id="menu-search" type="text" placeholder="Cari menu..." class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium" />
+          </div>
+        </div>
+        <div class="flex gap-2 overflow-x-auto scroll-x pb-2 mb-3" id="category-strip"></div>
+        <div id="menu-grid"></div>
+        <div id="menu-empty" class="hidden text-center py-12 sm:py-16" style="color:var(--muted);">
+          <div class="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center" style="background:var(--bg-2);">
+            <i data-lucide="utensils" class="w-7 h-7 opacity-40"></i>
+          </div>
+          <p class="font-semibold text-sm">Belum ada menu</p>
+          <p class="text-xs mb-4">Tambahkan menu di tab Menu untuk mulai menjual</p>
+          <button onclick="switchTab('menu')" class="btn-primary px-4 py-2 rounded-lg text-xs font-semibold">Buka Tab Menu</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hidden lg:flex fixed top-[5.25rem] right-4 bottom-4 w-[340px] z-30">
+      <div class="rounded-2xl border-2 overflow-hidden flex flex-col h-full w-full" style="background:var(--surface); border-color:var(--line);">
+        <div class="px-4 py-3.5 flex items-center justify-between flex-shrink-0" style="background:var(--ink); color:var(--bg);">
+          <div class="flex items-center gap-2">
+            <i data-lucide="shopping-basket" class="w-4 h-4"></i>
+            <h3 class="font-display font-bold text-sm">Pesanan</h3>
+          </div>
+        </div>
+        <div id="cart-desktop" class="cart-container flex-1 flex flex-col min-h-0"></div>
+      </div>
+    </div>
+
+    <div id="mobile-cart-bar" class="lg:hidden fixed left-3 right-3 z-30 hidden" style="bottom: calc(4.5rem + env(safe-area-inset-bottom));">
+      <button id="mobile-cart-btn" class="w-full flex items-center justify-between gap-3 pl-4 pr-2 py-2 rounded-2xl shadow-lg" style="background:var(--ink); color:var(--bg);">
+        <div class="flex items-center gap-2.5">
+          <div class="relative w-8 h-8 flex items-center justify-center">
+            <i data-lucide="shopping-basket" class="w-5 h-5"></i>
+            <span id="mobile-cart-count" class="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:var(--accent); color:white;">0</span>
+          </div>
+          <span class="font-bold text-sm">Lihat Keranjang</span>
+        </div>
+        <div class="font-num font-bold text-sm bg-white/15 px-3 py-1.5 rounded-xl" id="mobile-cart-total">Rp 0</div>
+      </button>
+    </div>
+  </section>
+
+  <section id="tab-menu" class="tab-panel">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+      <div>
+        <h2 class="font-display font-bold text-xl sm:text-2xl">Manajemen Menu</h2>
+        <p class="text-xs sm:text-sm" style="color:var(--muted);">Kelola kategori dan item yang dijual</p>
+      </div>
+      <button id="add-menu-btn" class="btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 self-start">
+        <i data-lucide="plus" class="w-4 h-4"></i>Tambah Menu
+      </button>
+    </div>
+
+    <div class="stats-card rounded-2xl p-4 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-display font-bold text-base">Kategori</h3>
+        <button id="add-category-btn" class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>Tambah
+        </button>
+      </div>
+      <div id="category-list" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <div class="stats-card rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 class="font-display font-bold text-base">Daftar Menu</h3>
+        <span class="text-xs font-semibold" style="color:var(--muted);" id="menu-count-label">0 item</span>
+      </div>
+      <div id="menu-list" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <section id="tab-history" class="tab-panel">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+      <div>
+        <h2 class="font-display font-bold text-xl sm:text-2xl">Riwayat Transaksi</h2>
+        <p class="text-xs sm:text-sm" style="color:var(--muted);">Semua penjualan yang telah diselesaikan</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <div class="relative flex-1 min-w-[240px]">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--muted);"></i>
+          <input type="text" id="history-search" placeholder="Cari nama / ID transaksi..." class="input-field w-full pl-9 pr-3 py-2 rounded-lg text-sm font-medium">
+        </div>
+        <input type="date" id="history-date-filter" class="input-field px-3 py-2 rounded-lg text-sm font-medium">
+        <button id="history-clear-date-btn" class="btn-ghost px-3 py-2 rounded-lg text-sm font-semibold" title="Hapus Filter"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button id="clear-history-btn" class="btn-ghost px-3 py-2 rounded-lg text-sm font-semibold" title="Hapus Semua Riwayat">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4 sm:mb-5">
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);">Transaksi</p>
+        <p class="font-num font-bold text-xl sm:text-2xl mt-1" id="hist-stat-count">0</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);">Penjualan</p>
+        <p class="font-num font-bold text-xl sm:text-2xl mt-1" id="hist-stat-total" style="color:var(--forest);">Rp 0</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);">Rata-rata</p>
+        <p class="font-num font-bold text-xl sm:text-2xl mt-1" id="hist-stat-avg">Rp 0</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);">Item Terjual</p>
+        <p class="font-num font-bold text-xl sm:text-2xl mt-1" id="hist-stat-items">0</p>
+      </div>
+    </div>
+
+    <div id="history-list" class="space-y-2"></div>
+    <div id="history-empty" class="hidden text-center py-12 sm:py-16" style="color:var(--muted);">
+      <div class="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style="background:var(--bg-2);">
+        <i data-lucide="inbox" class="w-6 h-6 opacity-40"></i>
+      </div>
+      <p class="font-semibold text-sm">Belum ada transaksi</p>
+      <p class="text-xs">Transaksi yang selesai akan muncul di sini</p>
+    </div>
+  </section>
+
+  <section id="tab-cash" class="tab-panel">
+    <div class="mb-4 sm:mb-5">
+      <h2 class="font-display font-bold text-xl sm:text-2xl">Manajemen Kas</h2>
+      <p class="text-xs sm:text-sm" style="color:var(--muted);">Pantau saldo dan arus kas toko Anda</p>
+    </div>
+
+    <div class="stats-card rounded-2xl p-5 sm:p-7 mb-4 sm:mb-5">
+      <div class="flex items-center justify-between">
+        <p class="text-xs uppercase tracking-widest font-bold" style="color:var(--muted);">Saldo Kas Saat Ini</p>
+        <i data-lucide="wallet" class="w-5 h-5" style="color:var(--muted);"></i>
+      </div>
+      <p class="font-num font-bold text-3xl sm:text-4xl mt-1.5" id="cash-balance-display" style="color:var(--forest);">Rp 0</p>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button id="cash-in-btn" class="btn-primary px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5" style="background:var(--forest); border:none;">
+          <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i>Kas Masuk
+        </button>
+        <button id="cash-out-btn" class="btn-accent px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="arrow-up-from-line" class="w-4 h-4"></i>Kas Keluar
+        </button>
+        <button id="cash-edit-start-btn" class="btn-ghost px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="settings-2" class="w-4 h-4"></i>Ubah Modal
+        </button>
+      </div>
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-2.5 mb-4 sm:mb-5">
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="w-2 h-2 rounded-full" style="background:var(--forest);"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);">Modal Awal</p>
+        </div>
+        <p class="font-num font-bold text-lg" id="cash-start-display">Rp 0</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="w-2 h-2 rounded-full" style="background:var(--accent);"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);">Total Masuk</p>
+        </div>
+        <p class="font-num font-bold text-lg" id="cash-in-display" style="color:var(--forest);">+ Rp 0</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="w-2 h-2 rounded-full" style="background:var(--danger);"></div>
+          <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);">Total Keluar</p>
+        </div>
+        <p class="font-num font-bold text-lg" id="cash-out-display" style="color:var(--danger);">- Rp 0</p>
+      </div>
+    </div>
+
+    <div class="stats-card rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 class="font-display font-bold text-base">Arus Kas</h3>
+        <div class="flex gap-2">
+          <input type="date" id="cash-date-filter" class="input-field px-2 py-1.5 rounded-lg text-xs font-medium">
+          <button id="cash-clear-date-btn" class="btn-ghost px-2 py-1.5 rounded-lg text-xs font-semibold"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+          <button id="clear-cashflow-btn" class="btn-ghost px-2 py-1.5 rounded-lg text-xs font-semibold"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+      <div id="cashflow-list" class="space-y-2"></div>
+      <div id="cashflow-empty" class="hidden text-center py-8" style="color:var(--muted);">
+        <i data-lucide="receipt" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+        <p class="text-xs font-medium">Belum ada arus kas tercatat</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-reports" class="tab-panel">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
+      <div>
+        <h2 class="font-display font-bold text-xl sm:text-2xl">Laporan Penjualan</h2>
+        <p class="text-xs sm:text-sm" style="color:var(--muted);">Ringkasan performa toko Anda</p>
+      </div>
+      <div class="flex gap-2 items-center">
+        <input type="date" id="reports-date-filter" class="input-field px-3 py-2 rounded-lg text-sm font-medium">
+        <button id="reports-clear-date-btn" class="btn-ghost px-3 py-2 rounded-lg text-sm font-semibold"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4 sm:mb-5">
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);" id="rep-selected-label">Hari Ini</p>
+        <p class="font-num font-bold text-lg sm:text-xl mt-1" id="rep-today-total" style="color:var(--forest);">Rp 0</p>
+        <p class="text-xs mt-0.5" id="rep-today-count" style="color:var(--muted);">0 transaksi</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);">7 Hari</p>
+        <p class="font-num font-bold text-lg sm:text-xl mt-1" id="rep-week-total" style="color:var(--accent);">Rp 0</p>
+        <p class="text-xs mt-0.5" id="rep-week-count" style="color:var(--muted);">0 transaksi</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);">Total</p>
+        <p class="font-num font-bold text-lg sm:text-xl mt-1" id="rep-all-total">Rp 0</p>
+        <p class="text-xs mt-0.5" id="rep-all-count" style="color:var(--muted);">0 transaksi</p>
+      </div>
+      <div class="stats-card rounded-2xl p-3 sm:p-4">
+        <p class="text-[10px] uppercase tracking-wider font-bold" style="color:var(--muted);">Rata-rata Nominal</p>
+        <p class="font-num font-bold text-lg sm:text-xl mt-1" id="rep-avg">Rp 0</p>
+      </div>
+    </div>
+
+    <div class="stats-card rounded-2xl p-4 mb-4 sm:mb-5">
+      <h3 class="font-display font-bold text-base mb-0.5">Tren 14 Hari Terakhir</h3>
+      <p class="text-xs mb-3" style="color:var(--muted);">Total penjualan harian</p>
+      <div class="h-48 sm:h-64">
+        <canvas id="sales-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-4 sm:gap-5">
+      <div class="stats-card rounded-2xl p-4">
+        <h3 class="font-display font-bold text-base mb-3">Menu Terlaris</h3>
+        <div id="top-items-list" class="space-y-2.5"></div>
+        <div id="top-items-empty" class="hidden text-center py-6 text-xs" style="color:var(--muted);">Belum ada data</div>
+      </div>
+      <div class="stats-card rounded-2xl p-4">
+        <h3 class="font-display font-bold text-base mb-3">Penjualan per Kategori</h3>
+        <div id="cat-breakdown-list" class="space-y-3"></div>
+        <div id="cat-breakdown-empty" class="hidden text-center py-6 text-xs" style="color:var(--muted);">Belum ada data</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom-nav fixed bottom-0 left-0 right-0 z-40 lg:hidden">
+  <div class="grid grid-cols-5 h-14">
+    <button data-tab="pos" class="bottom-nav-btn active flex flex-col items-center justify-center gap-0.5">
+      <i data-lucide="store" class="nav-icon w-5 h-5"></i>
+      <span class="text-[10px] font-bold">Kasir</span>
+    </button>
+    <button data-tab="menu" class="bottom-nav-btn flex flex-col items-center justify-center gap-0.5">
+      <i data-lucide="utensils" class="nav-icon w-5 h-5"></i>
+      <span class="text-[10px] font-bold">Menu</span>
+    </button>
+    <button data-tab="history" class="bottom-nav-btn flex flex-col items-center justify-center gap-0.5">
+      <i data-lucide="receipt" class="nav-icon w-5 h-5"></i>
+      <span class="text-[10px] font-bold">Riwayat</span>
+    </button>
+    <button data-tab="cash" class="bottom-nav-btn flex flex-col items-center justify-center gap-0.5">
+      <i data-lucide="wallet" class="nav-icon w-5 h-5"></i>
+      <span class="text-[10px] font-bold">Kas</span>
+    </button>
+    <button data-tab="reports" class="bottom-nav-btn flex flex-col items-center justify-center gap-0.5">
+      <i data-lucide="bar-chart-3" class="nav-icon w-5 h-5"></i>
+      <span class="text-[10px] font-bold">Laporan</span>
+    </button>
+  </div>
+</nav>
+
+<div id="cart-sheet-backdrop" class="fixed inset-0 z-50 hidden lg:hidden" style="background:rgba(0,0,0,0.45);"></div>
+<div id="cart-sheet" class="sheet fixed bottom-0 left-0 right-0 z-50 lg:hidden rounded-t-2xl flex flex-col" style="background:var(--surface); max-height:90vh; max-height:90dvh;">
+  <div class="p-3.5 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--line);">
+    <div class="flex items-center gap-2">
+      <i data-lucide="shopping-basket" class="w-5 h-5"></i>
+      <h3 class="font-display font-bold text-base">Pesanan</h3>
+    </div>
+    <button id="close-cart-sheet" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+  <div id="cart-mobile" class="cart-container flex-1 flex flex-col min-h-0"></div>
+</div>
+
+<div id="modal-container"></div>
+<div id="toast-container" class="fixed top-16 right-3 z-[100] space-y-2 max-w-[calc(100vw-1.5rem)]"></div>
+
+<script>
+const STORAGE_KEY = 'kasir-fyx';
+const ITEMS_PER_PAGE = 10;
+const MENU_ICONS = ['utensils','coffee','cup-soda','wine','beer','soup','beef','fish','cookie','cake','ice-cream','apple','banana','carrot','egg','milk','croissant','donut','pizza','candy','sandwich','salad','chef-hat','flame','wheat'];
+const CAT_PALETTE = ['#C75B3C','#2D5A3D','#B8860B','#6B4423','#8B5530','#5BA377','#D75446','#7B5E3B'];
+
+let state = {
+  store: { name: '', logo: null, startingBalance: 0 },
+  menu: [],
+  categories: [],
+  transactions: [],
+  cashFlow: [],
+  cart: [],
+  activeCategory: 'all',
+  currentTab: 'pos',
+  searchQuery: '',
+  settings: { taxRate: 0 },
+  theme: 'light',
+  balanceHidden: false,
+  historyPage: 1,
+  cashPage: 1
+};
+
+let tempLogoData = null;
+let salesChart = null;
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function rupiah(n) { 
+  const v = Math.round(Number(n)||0);
+  if (v < 0) return '-Rp ' + Math.abs(v).toLocaleString('id-ID');
+  return 'Rp ' + v.toLocaleString('id-ID');
+}
+function rupiahShort(n) {
+  const v = Number(n)||0;
+  const sign = v < 0 ? '-' : '';
+  const absV = Math.abs(v);
+  if (absV >= 1000000) return sign + 'Rp ' + (absV/1000000).toFixed(absV%1000000===0?0:1) + 'jt';
+  if (absV >= 1000) return sign + 'Rp ' + (absV/1000).toFixed(absV%1000===0?0:1) + 'rb';
+  return sign + 'Rp ' + absV.toLocaleString('id-ID');
+}
+function formatBalance(n) {
+  const v = Math.round(Number(n)||0);
+  if (v < 0) return '-Rp ' + Math.abs(v).toLocaleString('id-ID');
+  return 'Rp ' + v.toLocaleString('id-ID');
+}
+function formatQty(qty) {
+  let q = Number(qty);
+  if (Number.isInteger(q)) return q.toString();
+  return q.toFixed(3).replace(/\.?0+$/, '');
+}
+function fmtDate(ts) { 
+  const d = new Date(ts);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`; 
+}
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); }
+function fmtTimeWithSeconds(ts) { return new Date(ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function isSameDay(a,b) { const d1=new Date(a),d2=new Date(b); return d1.getFullYear()===d2.getFullYear()&&d1.getMonth()===d2.getMonth()&&d1.getDate()===d2.getDate(); }
+function isToday(ts) { return isSameDay(ts, Date.now()); }
+function withinDays(ts,days) { return Date.now()-ts < days*86400000; }
+function catColor(cat) { const i = state.categories.indexOf(cat); return CAT_PALETTE[i % CAT_PALETTE.length] || 'var(--accent)'; }
+function sortDesc(a, b) { return b.timestamp - a.timestamp; }
+function filterByDate(items, dateStr) {
+  if (!dateStr) return items;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return items.filter(item => {
+    const d = new Date(item.timestamp);
+    return d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
+  });
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      store: state.store, menu: state.menu, categories: state.categories,
+      transactions: state.transactions, cashFlow: state.cashFlow,
+      settings: state.settings, theme: state.theme, balanceHidden: state.balanceHidden
+    }));
+  } catch(e) { console.warn('Save failed', e); }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { 
+      const parsed = JSON.parse(raw);
+      Object.assign(state, parsed);
+      if (state.balanceHidden === undefined) state.balanceHidden = false;
+      return true; 
+    }
+  } catch(e) { console.warn('Load failed', e); }
+  return false;
+}
+
+function resizeImage(file, maxSize, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height) { if (width > maxSize) { height = Math.round(height*maxSize/width); width = maxSize; } }
+      else { if (height > maxSize) { width = Math.round(width*maxSize/height); height = maxSize; } }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      cb(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function toast(msg, type='info') {
+  const c = { 
+    success:{bg:'var(--forest)',icon:'check-circle-2', text:'#fff'}, 
+    error:{bg:'var(--danger)',icon:'x-circle', text:'#fff'}, 
+    info:{bg:'var(--ink)',icon:'info', text:'var(--bg)'}, 
+    warning:{bg:'var(--accent)',icon:'alert-triangle', text:'#fff'} 
+  }[type] || {bg:'var(--ink)',icon:'info', text:'var(--bg)'};
+  const el = document.createElement('div');
+  el.className = 'toast flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl shadow-lg';
+  el.style.background = c.bg;
+  el.style.color = c.text;
+  el.innerHTML = `<i data-lucide="${c.icon}" class="w-4 h-4 flex-shrink-0"></i><span class="text-xs font-semibold flex-1">${msg}</span>`;
+  $('#toast-container').appendChild(el);
+  lucide.createIcons();
+  setTimeout(() => { el.classList.add('removing'); setTimeout(() => el.remove(), 220); }, 2600);
+}
+
+function showModal(html) {
+  $('#modal-container').innerHTML = `<div class="modal-overlay fixed inset-0 z-[90] flex items-center justify-center p-3 sm:p-4 overflow-y-auto" style="background:rgba(31,20,16,0.55); backdrop-filter:blur(4px);"><div class="modal-content w-full max-w-md rounded-2xl overflow-hidden" style="background:var(--surface); box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);">${html}</div></div>`;
+  lucide.createIcons();
+}
+function closeModal() { $('#modal-container').innerHTML = ''; }
+document.addEventListener('click', e => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
+
+function getItemEffectivePrice(item) {
+  if (item.discount && item.discount > 0) {
+    if (item.discountType === 'percent') {
+      return Math.max(0, Math.round(item.price * (1 - item.discount / 100)));
+    } else {
+      return Math.max(0, item.price - item.discount);
+    }
+  }
+  return item.price;
+}
+
+function formatCartItemPrice(item) {
+  const effPrice = getItemEffectivePrice(item);
+  const hasDiscount = item.discount && item.discount > 0;
+  if (hasDiscount) {
+    return `<span style="text-decoration:line-through; opacity:0.7;">${rupiah(item.price)}</span> ${rupiah(effPrice)} × ${formatQty(item.qty)}`;
+  }
+  return `${rupiah(item.price)} × ${formatQty(item.qty)}`;
+}
+
+function cartSubtotal() { return state.cart.reduce((s,i)=>s+getItemEffectivePrice(i)*i.qty,0); }
+function cartCount() { return state.cart.reduce((s,i)=>s+i.qty,0); }
+
+function cashIn() { return state.cashFlow.filter(f=>f.type==='in'||f.type==='start'||f.type==='sale').reduce((s,f)=>s+f.amount,0); }
+function cashOut() { return state.cashFlow.filter(f=>f.type==='out').reduce((s,f)=>s+f.amount,0); }
+function cashBalance() { return cashIn()-cashOut(); }
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', state.theme);
+  $('#theme-icon').setAttribute('data-lucide', state.theme === 'dark' ? 'sun' : 'moon');
+  lucide.createIcons();
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  saveState();
+  if (state.currentTab === 'reports' && salesChart) renderReports();
+}
+
+function toggleBalanceVisibility() {
+  state.balanceHidden = !state.balanceHidden;
+  saveState();
+  updateHeader();
+  const toggleIcon = $('#balance-toggle-icon');
+  if (toggleIcon) {
+    toggleIcon.setAttribute('data-lucide', state.balanceHidden ? 'eye-off' : 'eye');
+    const btn = $('#balance-toggle');
+    if (btn) btn.title = state.balanceHidden ? 'Tampilkan saldo' : 'Sembunyikan saldo';
+    lucide.createIcons();
+  }
+}
+
+function updateDateInputStyle(input) {
+  if (input.value) {
+    input.classList.remove('date-empty');
+  } else {
+    input.classList.add('date-empty');
+  }
+}
+
+function initDateInputs() {
+  ['history-date-filter', 'cash-date-filter', 'reports-date-filter'].forEach(id => {
+    const input = $('#' + id);
+    if (input) {
+      updateDateInputStyle(input);
+      input.addEventListener('change', () => updateDateInputStyle(input));
+    }
+  });
+}
+
+function switchTab(tab) {
+  state.currentTab = tab;
+  $$('.tab-panel').forEach(p => p.classList.remove('active'));
+  const panel = $('#tab-'+tab);
+  if (panel) { panel.classList.add('active'); panel.classList.remove('tab-content'); void panel.offsetWidth; panel.classList.add('tab-content'); }
+  $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  $$('.bottom-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  if (tab==='pos') renderPOS();
+  if (tab==='menu') renderMenuManagement();
+  if (tab==='history') renderHistory();
+  if (tab==='cash') renderCash();
+  if (tab==='reports') renderReports();
+  lucide.createIcons();
+  window.scrollTo(0, 0);
+}
+
+function updateHeader() {
+  $('#header-store-name').textContent = state.store.name || 'Kasir';
+  document.title = (state.store.name || 'Kasir') + ' — Aplikasi Kasir';
+  const logoEl = $('#header-logo');
+  if (state.store.logo) {
+    logoEl.innerHTML = `<img src="${state.store.logo}" alt="logo" />`;
+  } else {
+    logoEl.textContent = (state.store.name || 'K').charAt(0).toUpperCase();
+  }
+  const bal = cashBalance();
+  const balEl = $('#header-balance');
+  if (state.balanceHidden) {
+    balEl.textContent = 'Rp •••••';
+    balEl.style.color = 'var(--muted)';
+  } else {
+    balEl.textContent = formatBalance(bal);
+    balEl.style.color = bal < 0 ? 'var(--danger)' : 'var(--forest)';
+  }
+  $('#header-date').textContent = new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'short'});
+}
+
+/* ===== POS ===== */
+function renderPOS() {
+  renderCategoryStrip();
+  renderMenuGrid();
+  renderCart();
+  updateMobileCartButton();
+}
+
+function renderCategoryStrip() {
+  const strip = $('#category-strip');
+  const cats = ['all', ...state.categories.slice().sort((a, b) => a.localeCompare(b, 'id-ID'))];
+  strip.innerHTML = cats.map(c => {
+    const isActive = state.activeCategory === c;
+    const label = c === 'all' ? 'Semua' : c;
+    const count = c === 'all' ? state.menu.length : state.menu.filter(m=>m.category===c).length;
+    return `<button data-category="${c}" class="cat-pill ${isActive?'active':''} px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-1.5">${label}<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="${isActive?'background:rgba(255,255,255,0.2);':'background:var(--bg-2); color:var(--muted);'}">${count}</span></button>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+function renderMenuGrid() {
+  const grid = $('#menu-grid');
+  const empty = $('#menu-empty');
+  let items = state.menu.filter(m => m.available);
+  items.sort((a, b) => a.name.localeCompare(b.name, 'id-ID'));
+  if (state.activeCategory !== 'all') items = items.filter(m => m.category === state.activeCategory);
+  if (state.searchQuery) { const q = state.searchQuery.toLowerCase(); items = items.filter(m => m.name.toLowerCase().includes(q)); }
+
+  if (items.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    if (state.menu.length === 0) {
+      empty.querySelector('p.font-semibold').textContent = 'Belum ada menu';
+      empty.querySelector('p.text-xs').textContent = 'Tambahkan menu di tab Menu untuk mulai menjual';
+    } else {
+      empty.querySelector('p.font-semibold').textContent = 'Tidak ditemukan';
+      empty.querySelector('p.text-xs').textContent = 'Coba kata kunci atau kategori lain';
+    }
+    lucide.createIcons();
+    return;
+  }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = items.map(m => {
+    const inCart = state.cart.find(c => c.menuId === m.id);
+    const color = catColor(m.category);
+    const effPrice = getItemEffectivePrice(m);
+    const hasDiscount = m.discount && m.discount > 0;
+    return `<button data-add-menu="${m.id}" class="menu-card rounded-xl sm:rounded-2xl p-2.5 sm:p-3 text-left flex flex-col gap-2 ${m.available?'':'unavailable'}">
+      <div class="flex items-start justify-between">
+        <div class="icon-tile w-11 h-11 sm:w-12 sm:h-12" style="background:${color}22; color:${color};">
+          <i data-lucide="${m.icon||'utensils'}" class="w-5 h-5"></i>
+        </div>
+        <div class="flex flex-col items-end gap-1">
+          ${inCart?`<span class="badge" data-cart-badge="${m.id}" style="background:var(--accent-soft); color:var(--accent-dark);">${formatQty(inCart.qty)}x</span>`:''}
+          ${hasDiscount ? `<span class="badge" style="background:var(--danger-soft); color:var(--danger);">Diskon</span>` : ''}
+        </div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h4 class="font-bold text-sm leading-snug line-clamp-2" style="color:var(--ink);">${m.name}</h4>
+        <p class="text-[11px] mt-0.5 font-semibold truncate" style="color:var(--muted);">${m.category}</p>
+      </div>
+      <div class="mt-1">
+        ${hasDiscount ? `<p class="font-num text-[11px] line-through" style="color:var(--muted);">${rupiah(m.price)}</p>` : ''}
+        <p class="font-num font-bold text-base ${hasDiscount ? '' : 'mt-1'}" style="color:var(--accent);">${rupiah(effPrice)}</p>
+      </div>
+    </button>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+function renderCart() {
+  [$('#cart-desktop'), $('#cart-mobile')].forEach(container => {
+    if (!container) return;
+    if (state.cart.length === 0) {
+      container.innerHTML = `<div class="p-6 sm:p-8 text-center flex-1 flex flex-col items-center justify-center" style="color:var(--muted);">
+        <i data-lucide="shopping-basket" class="w-9 h-9 mx-auto mb-2 opacity-40"></i>
+        <p class="font-semibold text-sm">Keranjang kosong</p>
+        <p class="text-xs">Pilih menu untuk memulai</p>
+      </div>`;
+    } else {
+      container.innerHTML = `<div class="flex-1 overflow-y-auto px-2.5 py-1.5 divide-y min-h-0" style="border-color:var(--line);">
+        ${state.cart.map(item => {
+          const m = state.menu.find(x => x.id === item.menuId);
+          const color = m ? catColor(m.category) : 'var(--accent)';
+          return `<div class="cart-item py-2.5 flex items-center gap-2.5">
+            <div class="icon-tile w-9 h-9" style="background:${color}22; color:${color};">
+              <i data-lucide="${m?.icon||'utensils'}" class="w-4 h-4"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-xs sm:text-sm truncate">${item.name}</p>
+              <p class="text-[11px] font-num cart-item-price" style="color:var(--muted);">${formatCartItemPrice(item)}</p>
+            </div>
+            <div class="flex items-center gap-1">
+              <button data-qty-minus="${item.menuId}" class="w-7 h-7 rounded-full flex items-center justify-center" style="background:var(--bg); border:1px solid var(--line);"><i data-lucide="minus" class="w-3 h-3"></i></button>
+              <input type="text" inputmode="decimal" value="${formatQty(item.qty)}" data-qty-input="${item.menuId}" class="cart-qty-input font-bold text-sm w-12 h-7" style="color:var(--ink);" />
+              <button data-qty-plus="${item.menuId}" class="w-7 h-7 rounded-full flex items-center justify-center" style="background:var(--ink); color:var(--bg);"><i data-lucide="plus" class="w-3 h-3"></i></button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>${renderCartSummary()}`;
+    }
+  });
+  lucide.createIcons();
+}
+
+function renderCartSummary() {
+  const sub = cartSubtotal();
+  const count = cartCount();
+  return `<div class="p-3 sm:p-4 border-t flex-shrink-0" style="border-color:var(--line); background:var(--bg);">
+    <div class="space-y-1 text-xs sm:text-sm">
+      <div class="flex justify-between"><span style="color:var(--muted);">Subtotal (<span class="cart-count-display">${formatQty(count)}</span> qty)</span><span class="font-num font-semibold cart-subtotal-display">${rupiah(sub)}</span></div>
+    </div>
+    <button id="checkout-btn" class="btn-accent w-full mt-3 py-2.5 sm:py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2" ${state.cart.length===0?'disabled':''}>
+      <i data-lucide="credit-card" class="w-4 h-4"></i>Proses Pembayaran
+    </button>
+  </div>`;
+}
+
+function updateCartSummaryLive() {
+  const sub = cartSubtotal();
+  const count = cartCount();
+  $$('.cart-subtotal-display').forEach(el => el.textContent = rupiah(sub));
+  $$('.cart-count-display').forEach(el => el.textContent = formatQty(count));
+}
+
+function updateCartBadgeLive(menuId, qty) {
+  $$(`[data-cart-badge="${menuId}"]`).forEach(el => el.textContent = formatQty(qty) + 'x');
+}
+
+function updateMobileCartButton() {
+  const btn = $('#mobile-cart-bar');
+  if (state.cart.length === 0) { btn.classList.add('hidden'); return; }
+  btn.classList.remove('hidden');
+  $('#mobile-cart-count').textContent = formatQty(cartCount());
+  $('#mobile-cart-total').textContent = rupiah(cartSubtotal());
+}
+
+function addToCart(menuId) {
+  const m = state.menu.find(x => x.id === menuId);
+  if (!m || !m.available) return;
+  const ex = state.cart.find(c => c.menuId === menuId);
+  if (ex) {
+    ex.qty += 1;
+  } else {
+    state.cart.push({ 
+      menuId, 
+      name: m.name, 
+      price: m.price, 
+      discount: m.discount || 0, 
+      discountType: m.discountType || 'amount', 
+      qty: 1 
+    });
+  }
+  renderPOS();
+}
+function changeQty(menuId, delta) {
+  const item = state.cart.find(c => c.menuId === menuId);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) state.cart = state.cart.filter(c => c.menuId !== menuId);
+  renderPOS();
+}
+
+/* ===== CHECKOUT ===== */
+function openCheckoutModal() {
+  if (state.cart.length === 0) return;
+  const subtotal = cartSubtotal();
+  const initialTotal = subtotal;
+  
+  showModal(`<div class="p-4 sm:p-5 border-b flex-shrink-0" style="border-color:var(--line);">
+    <div class="flex items-center justify-between">
+      <h3 class="font-display font-bold text-lg sm:text-xl">Pembayaran</h3>
+      <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    
+    <div class="mt-3 space-y-1.5 text-sm">
+      <div class="flex justify-between"><span style="color:var(--muted);">Subtotal</span><span class="font-num font-semibold" id="checkout-subtotal">${rupiah(subtotal)}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted);">Biaya Tambahan</span><span class="font-num font-semibold" id="checkout-fee">Rp 0</span></div>
+      <div class="flex justify-between font-bold text-base pt-1.5 border-t" style="border-color:var(--line);">
+        <span>Total</span>
+        <span class="font-num" id="checkout-total" style="color:var(--accent);">${rupiah(initialTotal)}</span>
+      </div>
+    </div>
+  </div>
+  <div class="modal-body p-4 sm:p-5 space-y-4">
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Metode Pembayaran</label>
+      <div class="grid grid-cols-3 gap-2 mt-2">
+        <button data-pay="cash" class="pay-btn active px-2 py-2.5 rounded-xl border-2 text-xs font-bold flex flex-col items-center gap-1" style="border-color:var(--ink); background:var(--bg);">
+          <i data-lucide="banknote" class="w-5 h-5"></i>Tunai
+        </button>
+        <button data-pay="qris" class="pay-btn px-2 py-2.5 rounded-xl border-2 text-xs font-bold flex flex-col items-center gap-1" style="border-color:var(--line);">
+          <i data-lucide="qr-code" class="w-5 h-5"></i>QRIS
+        </button>
+        <button data-pay="card" class="pay-btn px-2 py-2.5 rounded-xl border-2 text-xs font-bold flex flex-col items-center gap-1" style="border-color:var(--line);">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>Kartu
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Biaya Tambahan</label>
+      <div id="fee-list" class="space-y-2 mt-1.5"></div>
+      <button type="button" id="add-fee-btn" class="btn-ghost w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 mt-2">
+        <i data-lucide="plus" class="w-4 h-4"></i>Tambah Biaya
+      </button>
+    </div>
+
+    <div id="cash-section">
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Uang Diterima</label>
+      <input id="cash-received" type="number" inputmode="numeric" placeholder="0" class="input-field w-full mt-1.5 px-4 py-3 rounded-xl font-num font-bold text-lg" />
+      <div class="grid grid-cols-4 gap-1.5 mt-2">
+        <button id="uang-pas-btn" data-quick="${initialTotal}" class="quick-amt py-2 rounded-lg text-xs font-bold">Uang Pas</button>
+        <button data-quick="20000" class="quick-amt py-2 rounded-lg text-xs font-bold">20rb</button>
+        <button data-quick="50000" class="quick-amt py-2 rounded-lg text-xs font-bold">50rb</button>
+        <button data-quick="100000" class="quick-amt py-2 rounded-lg text-xs font-bold">100rb</button>
+      </div>
+      <div id="change-display" class="mt-2.5 p-3 rounded-xl flex justify-between items-center hidden" style="background:var(--forest-soft);">
+        <span class="text-xs font-semibold" style="color:var(--forest);">Kembalian</span>
+        <span class="font-num font-bold text-base" style="color:var(--forest);" id="change-amount">Rp 0</span>
+      </div>
+    </div>
+    <div id="noncash-info" class="hidden p-3 rounded-xl text-xs" style="background:var(--bg);">
+      <p style="color:var(--muted);">Pembayaran non-tunai sebesar <strong class="font-num" style="color:var(--ink);" id="noncash-total">${rupiah(initialTotal)}</strong> tidak mempengaruhi saldo kas fisik.</p>
+    </div>
+    <button id="confirm-checkout" class="btn-accent w-full py-3 sm:py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>Selesaikan Transaksi
+    </button>
+  </div>`);
+
+  let method = 'cash';
+  let fees = [];
+  const cashInput = $('#cash-received'), changeDisp = $('#change-display'), changeAmt = $('#change-amount'), confirmBtn = $('#confirm-checkout');
+
+  function renderFees() {
+    const list = $('#fee-list');
+    if (!list) return;
+    list.innerHTML = fees.map((f, idx) => `
+      <div class="fee-row flex flex-col gap-2 p-2.5 rounded-xl" style="background:var(--bg); border:1.5px solid var(--line);">
+          <div class="flex items-center gap-2">
+              <select data-fee-idx="${idx}" data-field="name" class="input-field flex-1 px-3 py-2 rounded-lg text-xs font-semibold">
+                  <option value="Pajak" ${f.name==='Pajak' && !f.isCustom?'selected':''}>Pajak</option>
+                  <option value="Service Charge" ${f.name==='Service Charge' && !f.isCustom?'selected':''}>Service Charge</option>
+                  <option value="Biaya Pengiriman" ${f.name==='Biaya Pengiriman' && !f.isCustom?'selected':''}>Biaya Pengiriman</option>
+                  <option value="Tip" ${f.name==='Tip' && !f.isCustom?'selected':''}>Tip</option>
+                  <option value="custom" ${f.isCustom?'selected':''}>Lainnya...</option>
+              </select>
+              <input type="text" data-fee-idx="${idx}" data-field="customName" value="${f.customName||''}" placeholder="Nama Biaya" class="input-field flex-1 px-3 py-2 rounded-lg text-xs font-semibold ${f.isCustom?'':'hidden'}" />
+              <button data-remove-fee="${idx}" class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--danger-soft); color:var(--danger);">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+          </div>
+          <div class="flex gap-2">
+              <select data-fee-idx="${idx}" data-field="type" class="input-field px-2 py-1.5 rounded-lg text-xs font-semibold">
+                  <option value="percent" ${f.type==='percent'?'selected':''}>Persen (%)</option>
+                  <option value="fixed" ${f.type==='fixed'?'selected':''}>Nominal (Rp)</option>
+              </select>
+              <input type="number" inputmode="decimal" data-fee-idx="${idx}" data-field="value" value="${f.value||''}" placeholder="0" class="input-field flex-1 px-3 py-1.5 rounded-lg text-sm font-num font-bold" />
+          </div>
+          <label class="flex items-center gap-1.5 cursor-pointer px-3 h-[38px] rounded-lg flex-shrink-0" style="background:var(--surface); border:1.5px solid var(--line); color:var(--ink-2);">
+              <input type="checkbox" data-fee-idx="${idx}" data-field="mode" ${f.mode==='include'?'checked':''} class="w-4 h-4" style="accent-color:var(--accent);" />
+              <span class="text-xs font-semibold whitespace-nowrap">Sudah Termasuk</span>
+          </label>
+      </div>
+    `).join('');
+    lucide.createIcons();
+  }
+
+  function updateTotal() {
+    let additionalFeeTotal = 0;
+    fees.forEach(f => {
+      let val = parseFloat(f.value) || 0;
+      let amount = 0;
+      if (f.type === 'percent') {
+        amount = Math.round((subtotal * val) / 100);
+      } else {
+        amount = val;
+      }
+      f._calculatedAmount = amount;
+      
+      if (f.mode === 'add') {
+        additionalFeeTotal += amount;
+      }
+    });
+    
+    const total = subtotal + additionalFeeTotal;
+    
+    $('#checkout-fee').textContent = rupiah(additionalFeeTotal);
+    $('#checkout-total').textContent = rupiah(total);
+    $('#uang-pas-btn').setAttribute('data-quick', total);
+    $('#noncash-total').textContent = rupiah(total);
+    
+    if (method === 'cash') {
+      const rec = parseInt(cashInput.value) || 0;
+      if (rec >= total) { 
+        changeDisp.classList.remove('hidden'); 
+        changeAmt.textContent = rupiah(rec - total); 
+        confirmBtn.disabled = false; 
+      } else { 
+        changeDisp.classList.add('hidden'); 
+        confirmBtn.disabled = rec > 0; 
+      }
+    } else {
+      confirmBtn.disabled = false;
+    }
+  }
+
+  $('#add-fee-btn').addEventListener('click', () => {
+    fees.push({ id: uid(), name: 'Pajak', isCustom: false, customName: '', type: 'percent', value: 0, mode: 'add' });
+    renderFees();
+    updateTotal();
+  });
+
+  $('#fee-list').addEventListener('click', e => {
+    const removeBtn = e.target.closest('[data-remove-fee]');
+    if (removeBtn) {
+      const idx = parseInt(removeBtn.dataset.removeFee);
+      fees.splice(idx, 1);
+      renderFees();
+      updateTotal();
+    }
+  });
+
+  function handleFeeInput(e) {
+    const el = e.target;
+    if (!el.dataset || el.dataset.feeIdx === undefined) return;
+    const idx = parseInt(el.dataset.feeIdx);
+    if (isNaN(idx)) return;
+    const field = el.dataset.field;
+    
+    if (field === 'name') {
+      if (el.value === 'custom') {
+        fees[idx].isCustom = true;
+        fees[idx].name = '';
+      } else {
+        fees[idx].isCustom = false;
+        fees[idx].name = el.value;
+      }
+      renderFees();
+    } else if (field === 'customName') {
+      fees[idx].customName = el.value;
+    } else if (field === 'value') {
+      fees[idx].value = el.value;
+    } else if (field === 'mode') {
+      fees[idx].mode = el.checked ? 'include' : 'add';
+    } else if (field === 'type') {
+      const oldType = fees[idx].type;
+      const newType = el.value;
+      if (oldType !== newType) {
+        const currentVal = parseFloat(fees[idx].value) || 0;
+        const valueInput = document.querySelector(`input[data-fee-idx="${idx}"][data-field="value"]`);
+        if (subtotal > 0 && valueInput) {
+          if (newType === 'percent') {
+            fees[idx].value = ((currentVal / subtotal) * 100).toFixed(2);
+          } else {
+            fees[idx].value = Math.round((currentVal / 100) * subtotal);
+          }
+          valueInput.value = fees[idx].value;
+        } else {
+          fees[idx].value = currentVal;
+        }
+        fees[idx].type = newType;
+      }
+    }
+    updateTotal();
+  }
+
+  $('#fee-list').addEventListener('input', handleFeeInput);
+  $('#fee-list').addEventListener('change', handleFeeInput);
+
+  cashInput.addEventListener('input', updateTotal);
+  
+  $$('.pay-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.pay-btn').forEach(b => { b.classList.remove('active'); b.style.borderColor='var(--line)'; b.style.background='transparent'; });
+      btn.classList.add('active'); btn.style.borderColor='var(--ink)'; btn.style.background='var(--bg)';
+      method = btn.dataset.pay;
+      $('#cash-section').classList.toggle('hidden', method !== 'cash');
+      $('#noncash-info').classList.toggle('hidden', method === 'cash');
+      updateTotal();
+    });
+  });
+  
+  $$('[data-quick]').forEach(btn => { 
+    btn.addEventListener('click', () => { 
+      cashInput.value = btn.dataset.quick; 
+      updateTotal(); 
+    }); 
+  });
+  
+  confirmBtn.addEventListener('click', () => {
+    let finalFees = fees.map(f => {
+      let val = parseFloat(f.value) || 0;
+      let amount = 0;
+      if (f.type === 'percent') {
+        amount = Math.round((subtotal * val) / 100);
+      } else {
+        amount = val;
+      }
+      let name = f.isCustom ? (f.customName || 'Biaya Lainnya') : f.name;
+      return { name, type: f.type, value: val, amount, mode: f.mode };
+    }).filter(f => f.amount !== 0);
+    
+    const additionalFeeTotal = finalFees.filter(f => f.mode === 'add').reduce((s, f) => s + f.amount, 0);
+    const total = subtotal + additionalFeeTotal;
+    
+    const rec = method === 'cash' ? (parseInt(cashInput.value) || 0) : total;
+    if (method === 'cash' && rec < total) { toast('Uang diterima kurang','error'); return; }
+    processCheckout(method, rec, total, additionalFeeTotal, finalFees);
+  });
+}
+
+function processCheckout(method, received, total, additionalFee, feesArray) {
+  const tx = {
+    id: uid(), 
+    transactionName: '',
+    items: state.cart.map(c => ({ 
+      menuId: c.menuId, 
+      name: c.name, 
+      price: c.price, 
+      qty: c.qty, 
+      icon: state.menu.find(m=>m.id===c.menuId)?.icon || 'utensils',
+      discount: c.discount || 0,
+      discountType: c.discountType || 'amount'
+    })),
+    subtotal: cartSubtotal(), 
+    additionalFee, 
+    fees: feesArray,
+    total, paymentMethod: method,
+    cashReceived: method==='cash'?received:total, change: method==='cash'?(received-total):0,
+    timestamp: Date.now()
+  };
+  state.transactions.unshift(tx);
+  if (method === 'cash') {
+    state.cashFlow.push({ id: uid(), type: 'sale', amount: total, note: 'Penjualan', timestamp: Date.now(), transactionId: tx.id });
+  }
+  state.cart = [];
+  saveState(); closeModal(); showReceipt(tx);
+  toast('Transaksi berhasil!','success');
+  renderPOS(); updateHeader();
+}
+
+function buildReceiptHTML(tx, preview = false) {
+  const bg = preview ? 'var(--card)' : '#fff';
+  const text = preview ? 'var(--text)' : '#1F1410';
+  const border = preview ? 'var(--line)' : '#ddd';
+  const mutedColor = preview ? 'var(--muted)' : '#8B7355';
+
+  const itemsHtml = tx.items.map(it => {
+    const effPrice = getItemEffectivePrice(it);
+    const hasDiscount = it.discount && it.discount > 0;
+    const originalTotal = it.price * it.qty;
+    const effectiveTotal = effPrice * it.qty;
+    
+    const rightSide = hasDiscount 
+      ? `<span style="white-space:nowrap;font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;text-align:right;">
+           <span style="text-decoration:line-through;color:${mutedColor};font-size:10px;display:block;">${rupiah(originalTotal)}</span>
+           ${rupiah(effectiveTotal)}
+         </span>`
+      : `<span style="white-space:nowrap;font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">${rupiah(effectiveTotal)}</span>`;
+
+    const detailLine = hasDiscount 
+      ? `@ ${rupiah(it.price)} - ${it.discountType === 'percent' ? it.discount + '%' : rupiah(it.discount)} → ${it.discountType === 'percent' ? rupiah(it.price * (1 - it.discount / 100)) : rupiah(it.price - it.discount)}`
+      : `@ ${rupiah(it.price)}`;
+    
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:11px;padding:3px 0;">
+        <div style="flex:1;min-width:0;word-break:break-word;">
+          <span>${formatQty(it.qty)}× ${it.name}</span>
+          <div style="font-size:10px;color:${mutedColor};margin-top:1px;font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">
+            ${detailLine}
+          </div>
+        </div>
+        ${rightSide}
+      </div>
+    `;
+  }).join('');
+
+  const feesHtml = (tx.fees && tx.fees.length > 0) ? tx.fees.map(f => {
+    const label = `${f.name}${f.type === 'percent' ? ` (${f.value}%)` : ''}`;
+    const amountStr = rupiah(f.amount);
+    
+    if (f.mode === 'include') {
+      return `
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:${mutedColor}">Termasuk ${label}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;color:${mutedColor};">${amountStr}</span>
+        </div>
+      `;
+    } else {
+      return `
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:${mutedColor}">${label}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">${amountStr}</span>
+        </div>
+      `;
+    }
+  }).join('') : '';
+
+  return `
+    <div style="width:320px;box-sizing:border-box;padding:16px;background:${bg};color:${text};font-family:'Plus Jakarta Sans',sans-serif;">
+      <div style="text-align:center;padding-bottom:12px;border-bottom:1px dashed ${border};">
+        <h3 style="margin:0;font-size:18px;font-weight:700;font-family:'Space Grotesk',sans-serif;">${state.store.name}</h3>
+        <p style="margin:4px 0 0;font-size:10px;color:${mutedColor};">Struk Transaksi</p>
+      </div>
+      <div style="padding:8px 0;border-bottom:1px dashed ${border};font-size:11px;color:${mutedColor};">
+        <div style="display:flex; justify-content:space-between;">
+          <span>${fmtDate(tx.timestamp)}</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">${fmtTimeWithSeconds(tx.timestamp)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span style="font-family:monospace; word-break:break-all;">#${tx.id.toUpperCase()}</span>
+        </div>
+      </div>
+      <div style="padding:8px 0;">${itemsHtml}</div>
+      <div style="border-top:1px dashed ${border}; padding-top:8px; font-size:11px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:${mutedColor}">Subtotal</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">${rupiah(tx.subtotal)}</span>
+        </div>
+        ${feesHtml}
+        <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:6px;border-top:1px dashed ${border};font-weight:700;font-size:13px;">
+          <span>TOTAL</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">${rupiah(tx.total)}</span>
+        </div>
+      </div>
+      <div style="border-top:1px dashed ${border}; padding-top:8px; margin-top:8px; font-size:11px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:${mutedColor}">Metode Pembayaran</span>
+          <span style="font-weight:700;text-transform:uppercase;">${tx.paymentMethod === 'cash' ? 'Tunai' : tx.paymentMethod === 'qris' ? 'QRIS' : 'Kartu'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:${mutedColor}">Status Pembayaran</span>
+          <span>Berhasil</span>
+        </div>
+        ${tx.paymentMethod === 'cash' ? `
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:${mutedColor}">Diterima</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">${rupiah(tx.cashReceived)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:${mutedColor}">Kembalian</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;">${rupiah(tx.change)}</span>
+          </div>
+        ` : ''}
+      </div>
+      <div style="text-align:center; margin-top:8px; padding-top:12px; border-top:1px dashed ${border};">
+        <p style="margin:0; font-size:11px; font-weight:600;">Terima kasih!</p>
+      </div>
+    </div>
+  `;
+}
+
+function showReceipt(tx) {
+  const receiptHTML = buildReceiptHTML(tx, true);
+  showModal(`
+    <div class="no-print p-4 border-b flex-shrink-0" style="border-color:var(--line);">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-display font-bold text-lg">Detail Transaksi</h3>
+        <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Beri Tanda (Opsional)</label>
+      <input id="receipt-transaction-name" type="text" value="${tx.transactionName || ''}" placeholder="Tambah nama untuk catatan riwayat..." class="input-field w-full mt-1.5 px-4 py-2.5 rounded-xl text-sm font-medium" />
+    </div>
+    <div class="modal-body printable" style="overflow:auto; display:flex; justify-content:center; padding:16px;">
+      <div id="receipt-preview">${receiptHTML}</div>
+    </div>
+    <div class="no-print p-3 flex gap-2 flex-shrink-0" style="background:var(--bg);">
+      <button onclick="printReceipt('${tx.id}')" class="btn-ghost flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
+        <i data-lucide="printer" class="w-4 h-4"></i>Cetak
+      </button>
+      <button onclick="closeModal()" class="btn-primary flex-1 py-2.5 rounded-xl text-sm font-semibold">Selesai</button>
+    </div>
+  `);
+
+  const scaleReceipt = () => {
+    const preview = document.querySelector('.modal-body.printable');
+    const receipt = document.getElementById('receipt-preview');
+    if (!preview || !receipt) return;
+    const thermalWidth = 320;
+    const availableWidth = preview.clientWidth - 32;
+    const scale = Math.max(1, availableWidth / thermalWidth);
+    receipt.style.transform = `scale(${scale})`;
+    receipt.style.transformOrigin = 'top center';
+  };
+
+  requestAnimationFrame(scaleReceipt);
+
+  $('#receipt-transaction-name').addEventListener('input', (e) => {
+    tx.transactionName = e.target.value.trim();
+    saveState();
+    if (state.currentTab === 'history') renderHistory();
+  });
+}
+
+function printReceipt(txId) {
+  const tx = state.transactions.find(t => t.id === txId);
+  if (!tx) return;
+  const receiptHTML = buildReceiptHTML(tx);
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed'; iframe.style.right = '0'; iframe.style.bottom = '0'; iframe.style.width = '0'; iframe.style.height = '0'; iframe.style.border = '0';
+  document.body.appendChild(iframe);
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html><html><head><title>Struk Transaksi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>html,body{margin:0;padding:0;background:white;} @page{margin:0;size:auto;} body{display:flex;justify-content:center;}</style>
+    </head><body>${receiptHTML}</body></html>
+  `);
+  doc.close();
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 1000);
+  }, 500);
+}
+
+/* ===== MENU MGMT ===== */
+function renderMenuManagement() { renderCategoryList(); renderMenuList(); }
+
+function renderCategoryList() {
+  const list = $('#category-list');
+  if (state.categories.length === 0) {
+    list.innerHTML = `<p class="text-xs" style="color:var(--muted);">Belum ada kategori. Klik "Tambah" untuk membuat.</p>`;
+    lucide.createIcons();
+    return;
+  }
+  const sortedCats = state.categories.slice().sort((a, b) => a.localeCompare(b, 'id-ID'));
+  list.innerHTML = sortedCats.map(cat => {
+    const count = state.menu.filter(m => m.category === cat).length;
+    return `<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style="background:var(--bg); border:1.5px solid var(--line);">
+      <span class="text-xs sm:text-sm font-semibold">${cat}</span>
+      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background:var(--ink); color:var(--bg);">${count}</span>
+      <button data-edit-category="${cat}" class="w-5 h-5 rounded-full flex items-center justify-center" style="color:var(--muted);"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+      <button data-del-category="${cat}" class="w-5 h-5 rounded-full flex items-center justify-center" style="color:var(--danger);"><i data-lucide="x" class="w-3 h-3"></i></button>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+function renderMenuItemRow(m) {
+  const color = catColor(m.category);
+  const effPrice = getItemEffectivePrice(m);
+  const hasDiscount = m.discount && m.discount > 0;
+  return `<div class="flex items-center gap-3 p-2.5 rounded-xl border" style="background:var(--bg); border-color:var(--line);">
+    <div class="icon-tile w-10 h-10 sm:w-11 sm:h-11" style="background:${color}22; color:${color};"><i data-lucide="${m.icon||'utensils'}" class="w-5 h-5"></i></div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 flex-wrap">
+        <p class="font-bold text-xs sm:text-sm truncate">${m.name}</p>
+        ${!m.available?`<span class="badge" style="background:var(--danger-soft); color:var(--danger);">Habis</span>`:''}
+        ${hasDiscount?`<span class="badge" style="background:var(--accent-soft); color:var(--accent-dark);">Diskon ${m.discountType==='percent'?m.discount+'%':rupiah(m.discount)}</span>`:''}
+      </div>
+      <p class="text-[11px]" style="color:var(--muted);">${m.category} • ${hasDiscount?`<span style="text-decoration:line-through;">${rupiah(m.price)}</span> <span style="color:var(--accent);font-weight:700;">${rupiah(effPrice)}</span>`:rupiah(m.price)}</p>
+    </div>
+    <div class="flex gap-1 flex-shrink-0">
+      <button data-toggle-avail="${m.id}" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--surface); border:1px solid var(--line);" title="${m.available?'Tandai habis':'Tandai tersedia'}"><i data-lucide="${m.available?'eye':'eye-off'}" class="w-3.5 h-3.5"></i></button>
+      <button data-edit-menu="${m.id}" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--surface); border:1px solid var(--line);"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+      <button data-del-menu="${m.id}" class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--danger-soft); color:var(--danger);"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+    </div>
+  </div>`;
+}
+
+function renderMenuList() {
+  const list = $('#menu-list');
+  $('#menu-count-label').textContent = state.menu.length + ' item';
+
+  if (state.menu.length === 0) {
+    list.innerHTML = `<div class="text-center py-8" style="color:var(--muted);">
+      <div class="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center" style="background:var(--bg-2);"><i data-lucide="utensils" class="w-6 h-6 opacity-40"></i></div>
+      <p class="font-semibold text-sm">Belum ada menu</p>
+      <p class="text-xs">Klik "Tambah Menu" untuk membuat</p>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  let html = '';
+  const sortedCats = [...state.categories].sort((a, b) => a.localeCompare(b, 'id-ID'));
+  sortedCats.forEach(cat => {
+    const itemsInCat = state.menu.filter(m => m.category === cat).sort((a, b) => a.name.localeCompare(b.name, 'id-ID'));
+    if (itemsInCat.length > 0) {
+      html += `<div class="mb-4">
+        <h4 class="font-display font-bold text-sm mb-2 flex items-center gap-2" style="color:var(--ink);">
+          <div class="w-2.5 h-2.5 rounded-full" style="background:${catColor(cat)};"></div>${cat}
+          <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style="background:var(--bg-2); color:var(--muted);">${itemsInCat.length}</span>
+        </h4>
+        <div class="space-y-2">${itemsInCat.map(m => renderMenuItemRow(m)).join('')}</div>
+      </div>`;
+    }
+  });
+  list.innerHTML = html;
+  lucide.createIcons();
+}
+
+function openMenuForm(menuId=null) {
+  const m = menuId ? state.menu.find(x=>x.id===menuId) : null;
+  if (state.categories.length === 0) { toast('Tambahkan kategori dahulu','warning'); openCategoryForm(); return; }
+  const sortedCats = state.categories.slice().sort((a, b) => a.localeCompare(b, 'id-ID'));
+  showModal(`<div class="p-4 sm:p-5 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--line);">
+    <h3 class="font-display font-bold text-lg">${m?'Edit Menu':'Tambah Menu'}</h3>
+    <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+  <div class="modal-body p-4 sm:p-5 space-y-4">
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Nama Menu</label>
+      <input id="mf-name" type="text" value="${m?.name||''}" placeholder="cth: Nasi Goreng" class="input-field w-full mt-1.5 px-4 py-2.5 rounded-xl text-sm font-medium" />
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Harga (Rp)</label>
+        <input id="mf-price" type="number" inputmode="numeric" value="${m?.price||''}" placeholder="0" class="input-field w-full mt-1.5 px-4 py-2.5 rounded-xl text-sm font-num font-bold" />
+      </div>
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Kategori</label>
+        <select id="mf-category" class="input-field w-full mt-1.5 px-3 py-2.5 rounded-xl text-sm font-medium">${sortedCats.map(c=>`<option value="${c}" ${m?.category===c?'selected':''}>${c}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Tipe Diskon</label>
+        <select id="mf-discount-type" class="input-field w-full mt-1.5 px-3 py-2.5 rounded-xl text-sm font-medium">
+          <option value="percent" ${m?.discountType === 'percent' || !m?.discountType ? 'selected' : ''}>Persen (%)</option>
+          <option value="amount" ${m?.discountType === 'amount' ? 'selected' : ''}>Nominal (Rp)</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Diskon</label>
+        <input id="mf-discount" type="number" inputmode="numeric" value="${m?.discount||''}" placeholder="0" class="input-field w-full mt-1.5 px-4 py-2.5 rounded-xl text-sm font-num font-bold" />
+      </div>
+    </div>
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Ikon</label>
+      <div class="grid grid-cols-8 gap-1.5 mt-1.5 max-h-32 overflow-y-auto p-2 rounded-xl" style="background:var(--bg);">
+        ${MENU_ICONS.map(ic => `<button type="button" data-icon="${ic}" class="icon-pick aspect-square rounded-lg flex items-center justify-center ${m?.icon===ic?'selected':''}" style="${m?.icon===ic?'background:var(--surface); box-shadow:0 0 0 2px var(--ink);':''}"><i data-lucide="${ic}" class="w-4 h-4"></i></button>`).join('')}
+      </div>
+    </div>
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input id="mf-avail" type="checkbox" ${!m||m.available?'checked':''} class="w-4 h-4" style="accent-color:var(--accent);" />
+      <span class="text-sm font-semibold">Tersedia untuk dijual</span>
+    </label>
+    <div class="flex gap-2 pt-1">
+      <button onclick="closeModal()" class="btn-ghost flex-1 py-3 rounded-xl text-sm font-bold">Batal</button>
+      <button id="mf-save" class="btn-primary flex-1 py-3 rounded-xl text-sm font-bold">Simpan</button>
+    </div>
+  </div>`);
+
+  let selectedIcon = m?.icon || 'utensils';
+  $$('.icon-pick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.icon-pick').forEach(b => { b.classList.remove('selected'); b.style.background=''; b.style.boxShadow=''; });
+      btn.classList.add('selected'); btn.style.background='var(--surface)'; btn.style.boxShadow='0 0 0 2px var(--ink)';
+      selectedIcon = btn.dataset.icon;
+    });
+  });
+  $('#mf-discount-type').addEventListener('change', (e) => {
+    const discountInput = $('#mf-discount');
+    const priceInput = $('#mf-price');
+    const price = parseFloat(priceInput.value) || 0;
+    const currentVal = parseFloat(discountInput.value) || 0;
+    
+    if (currentVal === 0 || price === 0) return;
+    
+    if (e.target.value === 'percent') {
+      discountInput.value = ((currentVal / price) * 100).toFixed(2);
+    } else {
+      discountInput.value = Math.round((currentVal / 100) * price);
+    }
+  });
+  $('#mf-save').addEventListener('click', () => {
+    const name = $('#mf-name').value.trim();
+    const price = parseInt($('#mf-price').value) || 0;
+    const category = $('#mf-category').value;
+    const available = $('#mf-avail').checked;
+    const discount = parseFloat($('#mf-discount').value) || 0;
+    const discountType = $('#mf-discount-type').value;
+
+    if (!name) { toast('Nama wajib diisi','error'); return; }
+    if (price <= 0) { toast('Harga harus > 0','error'); return; }
+    if (discountType === 'percent' && discount > 100) { toast('Diskon maksimal 100%','error'); return; }
+    if (discountType === 'amount' && discount > price) { toast('Diskon tidak boleh melebihi harga','error'); return; }
+
+    if (m) { 
+      m.name=name; m.price=price; m.category=category; m.icon=selectedIcon; m.available=available; m.discount=discount; m.discountType=discountType;
+      toast('Menu diperbarui','success'); 
+    }
+    else { 
+      state.menu.push({ id:uid(), name, price, category, icon:selectedIcon, available, discount, discountType });
+      toast('Menu ditambahkan','success');
+    }
+    saveState(); closeModal(); renderMenuManagement();
+  });
+}
+
+function openCategoryForm(oldName=null) {
+  showModal(`<div class="p-4 sm:p-5 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--line);">
+    <h3 class="font-display font-bold text-lg">${oldName?'Edit Kategori':'Tambah Kategori'}</h3>
+    <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+  <div class="modal-body p-4 sm:p-5 space-y-4">
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Nama Kategori</label>
+      <input id="cf-name" type="text" value="${oldName||''}" placeholder="cth: Makanan" class="input-field w-full mt-1.5 px-4 py-2.5 rounded-xl text-sm font-medium" />
+    </div>
+    <div class="flex gap-2">
+      <button onclick="closeModal()" class="btn-ghost flex-1 py-3 rounded-xl text-sm font-bold">Batal</button>
+      <button id="cf-save" class="btn-primary flex-1 py-3 rounded-xl text-sm font-bold">Simpan</button>
+    </div>
+  </div>`);
+  $('#cf-save').addEventListener('click', () => {
+    const name = $('#cf-name').value.trim();
+    if (!name) { toast('Nama wajib diisi','error'); return; }
+    if (state.categories.includes(name) && name !== oldName) { toast('Kategori sudah ada','error'); return; }
+    if (oldName) { const i = state.categories.indexOf(oldName); state.categories[i]=name; state.menu.forEach(m=>{ if(m.category===oldName) m.category=name; }); toast('Kategori diperbarui','success'); }
+    else { state.categories.push(name); toast('Kategori ditambahkan','success'); }
+    saveState(); closeModal(); renderMenuManagement();
+  });
+}
+
+function deleteCategory(name) {
+  const count = state.menu.filter(m => m.category === name).length;
+  if (count > 0) { toast(`Masih ada ${count} menu di kategori ini`,'error'); return; }
+  showConfirm(`Hapus kategori "${name}"?`, () => { state.categories = state.categories.filter(c=>c!==name); saveState(); renderMenuManagement(); toast('Kategori dihapus','info'); });
+}
+
+function deleteMenu(id) {
+  const m = state.menu.find(x=>x.id===id); if (!m) return;
+  showConfirm(`Hapus menu "${m.name}"?`, () => { state.menu = state.menu.filter(x=>x.id!==id); state.cart = state.cart.filter(c=>c.menuId!==id); saveState(); renderMenuManagement(); renderPOS(); toast('Menu dihapus','info'); });
+}
+
+function showConfirm(msg, onYes) {
+  showModal(`<div class="modal-body p-5 sm:p-6 text-center">
+    <div class="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center" style="background:var(--danger-soft);"><i data-lucide="alert-triangle" class="w-7 h-7" style="color:var(--danger);"></i></div>
+    <h3 class="font-display font-bold text-base mb-1">Konfirmasi</h3>
+    <p class="text-sm mb-4" style="color:var(--muted);">${msg}</p>
+    <div class="flex gap-2">
+      <button onclick="closeModal()" class="btn-ghost flex-1 py-2.5 rounded-xl text-sm font-bold">Batal</button>
+      <button id="confirm-yes" class="btn-danger flex-1 py-2.5 rounded-xl text-sm font-bold">Hapus</button>
+    </div>
+  </div>`);
+  $('#confirm-yes').addEventListener('click', () => { closeModal(); onYes(); });
+}
+
+/* ===== HISTORY ===== */
+function renderHistory() {
+  const dateFilter = $('#history-date-filter').value;
+  const searchQuery = ($('#history-search')?.value || '').toLowerCase().trim();
+  
+  let txs = [...state.transactions].sort(sortDesc);
+  txs = filterByDate(txs, dateFilter);
+  
+  if (searchQuery) {
+    txs = txs.filter(t => 
+      (t.transactionName && t.transactionName.toLowerCase().includes(searchQuery)) || 
+      t.id.toLowerCase().includes(searchQuery)
+    );
+  }
+
+  const total = txs.reduce((s,t)=>s+t.total,0);
+  const items = txs.reduce((s,t)=>s+t.items.reduce((ss,i)=>ss+i.qty,0),0);
+  $('#hist-stat-count').textContent = txs.length;
+  $('#hist-stat-total').textContent = rupiah(total);
+  $('#hist-stat-avg').textContent = rupiah(txs.length?Math.round(total/txs.length):0);
+  $('#hist-stat-items').textContent = formatQty(items);
+
+  const list = $('#history-list'), empty = $('#history-empty');
+  if (txs.length === 0) { list.innerHTML=''; empty.classList.remove('hidden'); lucide.createIcons(); return; }
+  empty.classList.add('hidden');
+
+  const totalPages = Math.ceil(txs.length / ITEMS_PER_PAGE);
+  if (state.historyPage > totalPages) state.historyPage = 1;
+  if (state.historyPage < 1) state.historyPage = 1;
+  const startIdx = (state.historyPage - 1) * ITEMS_PER_PAGE;
+  const pageItems = txs.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+  list.innerHTML = pageItems.map(t => {
+    const ml = t.paymentMethod==='cash'?'Tunai':t.paymentMethod==='qris'?'QRIS':'Kartu';
+    const mc = t.paymentMethod==='cash'?'var(--forest)':t.paymentMethod==='qris'?'var(--accent)':'var(--ink)';
+    return `<button data-view-tx="${t.id}" class="w-full text-left p-3 rounded-xl border flex items-center gap-3 transition-all hover:border-current" style="background:var(--surface); border-color:var(--line);">
+      <div class="w-11 h-11 rounded-xl flex flex-col items-center justify-center flex-shrink-0" style="background:var(--bg);">
+        <span class="font-num font-bold text-sm leading-none">${new Date(t.timestamp).getDate()}</span>
+        <span class="text-[9px] font-bold uppercase" style="color:var(--muted);">${new Date(t.timestamp).toLocaleString('id-ID',{month:'short'})}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="font-bold text-xs sm:text-sm truncate">${t.transactionName ? t.transactionName + ' • ' : ''}#${t.id.toUpperCase()}</p>
+          <span class="badge" style="background:${mc}22; color:${mc};">${ml}</span>
+        </div>
+        <p class="text-[11px] mt-0.5 truncate" style="color:var(--muted);">${t.items.length} item • ${fmtTime(t.timestamp)}</p>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <p class="font-num font-bold text-sm sm:text-base">${rupiah(t.total)}</p>
+        <p class="text-[10px]" style="color:var(--muted);">${formatQty(t.items.reduce((s,i)=>s+i.qty,0))} qty</p>
+      </div>
+    </button>`;
+  }).join('');
+
+  if (totalPages > 1) {
+    list.innerHTML += `<div class="pagination-bar">
+      <button id="hist-prev-page" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5" ${state.historyPage===1?'disabled':''}>
+        <i data-lucide="chevron-left" class="w-4 h-4"></i>Sebelumnya
+      </button>
+      <span class="pagination-info">Halaman ${state.historyPage} dari ${totalPages} (${txs.length} transaksi)</span>
+      <button id="hist-next-page" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5" ${state.historyPage===totalPages?'disabled':''}>
+        Selanjutnya<i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </button>
+    </div>`;
+    const prevBtn = $('#hist-prev-page');
+    const nextBtn = $('#hist-next-page');
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (state.historyPage > 1) { state.historyPage--; renderHistory(); } });
+    if (nextBtn) nextBtn.addEventListener('click', () => { if (state.historyPage < totalPages) { state.historyPage++; renderHistory(); } });
+  }
+
+  lucide.createIcons();
+}
+
+function viewTransaction(txId) { const t = state.transactions.find(x=>x.id===txId); if (t) showReceipt(t); }
+
+/* ===== CASH ===== */
+function renderCash() {
+  const bal = cashBalance();
+  const balEl = $('#cash-balance-display');
+  balEl.textContent = formatBalance(bal);
+  balEl.style.color = bal < 0 ? 'var(--danger)' : 'var(--forest)';
+  $('#cash-start-display').textContent = rupiah(state.store.startingBalance);
+  $('#cash-in-display').textContent = '+ ' + rupiah(state.cashFlow.filter(f=>f.type==='in'||f.type==='sale').reduce((s,f)=>s+f.amount,0));
+  $('#cash-out-display').textContent = '- ' + rupiah(state.cashFlow.filter(f=>f.type==='out').reduce((s,f)=>s+f.amount,0));
+
+  const list = $('#cashflow-list'), empty = $('#cashflow-empty');
+  const dateFilter = $('#cash-date-filter').value;
+  let flows = [...state.cashFlow].sort(sortDesc); 
+  flows = filterByDate(flows, dateFilter);
+
+  if (flows.length === 0) { list.innerHTML=''; empty.classList.remove('hidden'); lucide.createIcons(); return; }
+  empty.classList.add('hidden');
+
+  const totalPages = Math.ceil(flows.length / ITEMS_PER_PAGE);
+  if (state.cashPage > totalPages) state.cashPage = 1;
+  if (state.cashPage < 1) state.cashPage = 1;
+  const startIdx = (state.cashPage - 1) * ITEMS_PER_PAGE;
+  const pageItems = flows.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+  list.innerHTML = pageItems.map(f => {
+    const isOut = f.type==='out', isStart = f.type==='start', isSale = f.type==='sale';
+    const icon = isOut?'arrow-up':isStart?'wallet':isSale?'shopping-cart':'arrow-down';
+    const color = isOut?'var(--danger)':'var(--forest)';
+    const label = isStart?'Modal Awal':isSale?'Penjualan':f.type==='in'?'Kas Masuk':'Kas Keluar';
+
+    let noteDisplay = f.note || '—';
+    let txIdDisplay = '';
+    if (f.transactionId) {
+      txIdDisplay = '#' + f.transactionId.toUpperCase();
+      noteDisplay = noteDisplay.replace(/\s*#\w+\s*$/i, '').trim() || noteDisplay;
+    }
+
+    return `<div class="flex items-center gap-2.5 p-2.5 rounded-xl border" style="background:var(--bg); border-color:var(--line);">
+      <div class="icon-tile w-9 h-9" style="background:${color}22; color:${color};"><i data-lucide="${icon}" class="w-4 h-4"></i></div>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-xs sm:text-sm">${label}</p>
+        <p class="text-[11px] truncate" style="color:var(--muted);">${noteDisplay}${txIdDisplay?' • '+txIdDisplay:''} • ${fmtDate(f.timestamp)} ${fmtTime(f.timestamp)}</p>
+      </div>
+      <p class="font-num font-bold text-xs sm:text-sm" style="color:${color};">${isOut?'-':'+'} ${rupiah(f.amount)}</p>
+    </div>`;
+  }).join('');
+
+  if (totalPages > 1) {
+    list.innerHTML += `<div class="pagination-bar">
+      <button id="cash-prev-page" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5" ${state.cashPage===1?'disabled':''}>
+        <i data-lucide="chevron-left" class="w-4 h-4"></i>Sebelumnya
+      </button>
+      <span class="pagination-info">Halaman ${state.cashPage} dari ${totalPages} (${flows.length} catatan)</span>
+      <button id="cash-next-page" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5" ${state.cashPage===totalPages?'disabled':''}>
+        Selanjutnya<i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </button>
+    </div>`;
+    const prevBtn = $('#cash-prev-page');
+    const nextBtn = $('#cash-next-page');
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (state.cashPage > 1) { state.cashPage--; renderCash(); } });
+    if (nextBtn) nextBtn.addEventListener('click', () => { if (state.cashPage < totalPages) { state.cashPage++; renderCash(); } });
+  }
+
+  lucide.createIcons();
+}
+
+function openCashForm(type) {
+  const isOut = type === 'out';
+  showModal(`<div class="p-4 sm:p-5 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--line);">
+    <h3 class="font-display font-bold text-lg">${isOut?'Kas Keluar':'Kas Masuk'}</h3>
+    <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+  <div class="modal-body p-4 sm:p-5 space-y-4">
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Jumlah (Rp)</label>
+      <input id="caf-amount" type="number" inputmode="numeric" placeholder="0" class="input-field w-full mt-1.5 px-4 py-3 rounded-xl font-num font-bold text-lg" />
+      <div class="grid grid-cols-4 gap-1.5 mt-2">${[10000,20000,50000,100000].map(a=>`<button data-qcash="${a}" class="quick-amt py-2 rounded-lg text-xs font-bold">${rupiahShort(a)}</button>`).join('')}</div>
+    </div>
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Keterangan</label>
+      <textarea id="caf-note" rows="2" placeholder="${isOut?'cth: Beli bahan, bayar listrik':'cth: Tambahan modal'}" class="input-field w-full mt-1.5 px-4 py-2.5 rounded-xl text-sm font-medium"></textarea>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="closeModal()" class="btn-ghost flex-1 py-3 rounded-xl text-sm font-bold">Batal</button>
+      <button id="caf-save" class="${isOut?'btn-danger':'btn-primary'} flex-1 py-3 rounded-xl text-sm font-bold">Simpan</button>
+    </div>
+  </div>`);
+  $$('[data-qcash]').forEach(btn => { btn.addEventListener('click', () => { const i = $('#caf-amount'); i.value = (parseInt(i.value)||0) + parseInt(btn.dataset.qcash); }); });
+  $('#caf-save').addEventListener('click', () => {
+    const amount = parseInt($('#caf-amount').value) || 0;
+    const note = $('#caf-note').value.trim();
+    if (amount <= 0) { toast('Jumlah harus > 0','error'); return; }
+    state.cashFlow.push({ id:uid(), type, amount, note: note || (isOut?'Pengeluaran kas':'Pemasukan kas'), timestamp: Date.now() });
+    saveState(); closeModal(); renderCash(); updateHeader();
+    toast(isOut?'Kas keluar tercatat':'Kas masuk tercatat','success');
+  });
+}
+
+function openEditStartBalance() {
+  showModal(`<div class="p-4 sm:p-5 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--line);">
+    <h3 class="font-display font-bold text-lg">Ubah Modal Awal</h3>
+    <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+  <div class="modal-body p-4 sm:p-5 space-y-4">
+    <div class="p-3 rounded-xl text-xs" style="background:var(--bg);">
+      <p style="color:var(--muted);">Modal awal saat ini: <strong class="font-num" style="color:var(--ink);">${rupiah(state.store.startingBalance)}</strong></p>
+      <p class="mt-1" style="color:var(--muted);">Mengubah modal awal akan menyesuaikan arus kas.</p>
+    </div>
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Modal Awal Baru (Rp)</label>
+      <input id="sbf-amount" type="number" inputmode="numeric" value="${state.store.startingBalance}" class="input-field w-full mt-1.5 px-4 py-3 rounded-xl font-num font-bold text-lg" />
+    </div>
+    <div class="flex gap-2">
+      <button onclick="closeModal()" class="btn-ghost flex-1 py-3 rounded-xl text-sm font-bold">Batal</button>
+      <button id="sbf-save" class="btn-primary flex-1 py-3 rounded-xl text-sm font-bold">Simpan</button>
+    </div>
+  </div>`);
+  $('#sbf-save').addEventListener('click', () => {
+    const v = parseInt($('#sbf-amount').value) || 0;
+    if (v < 0) { toast('Modal tidak boleh negatif','error'); return; }
+    state.cashFlow = state.cashFlow.filter(f => f.type !== 'start');
+    state.cashFlow.unshift({ id:uid(), type:'start', amount:v, note:'Modal awal kas', timestamp: Date.now() });
+    state.store.startingBalance = v;
+    saveState(); closeModal(); renderCash(); updateHeader();
+    toast('Modal awal diperbarui','success');
+  });
+}
+
+/* ===== REPORTS ===== */
+function renderReports() {
+  const dateFilter = $('#reports-date-filter').value;
+  const selectedTx = filterByDate(state.transactions, dateFilter);
+  const weekTx = state.transactions.filter(t=>withinDays(t.timestamp,7));
+  const allTx = state.transactions;
+  
+  $('#rep-selected-label').textContent = dateFilter ? new Date(dateFilter).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) : 'Hari Ini';
+  $('#rep-today-total').textContent = rupiah(selectedTx.reduce((s,t)=>s+t.total,0));
+  $('#rep-today-count').textContent = selectedTx.length + ' transaksi';
+  $('#rep-week-total').textContent = rupiah(weekTx.reduce((s,t)=>s+t.total,0));
+  $('#rep-week-count').textContent = weekTx.length + ' transaksi';
+  $('#rep-all-total').textContent = rupiah(allTx.reduce((s,t)=>s+t.total,0));
+  $('#rep-all-count').textContent = allTx.length + ' transaksi';
+  $('#rep-avg').textContent = rupiah(allTx.length?Math.round(allTx.reduce((s,t)=>s+t.total,0)/allTx.length):0);
+
+  const labels = [], data = [];
+  for (let i=13; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+    labels.push(d.toLocaleDateString('id-ID',{day:'numeric',month:'short'}));
+    data.push(state.transactions.filter(t=>isSameDay(t.timestamp,d.getTime())).reduce((s,t)=>s+t.total,0));
+  }
+  if (salesChart) salesChart.destroy();
+  const isDark = state.theme === 'dark';
+  const ctx = $('#sales-chart').getContext('2d');
+  salesChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label:'Penjualan', data, backgroundColor: data.map((_,i)=>i===data.length-1?(isDark?'#D97757':'#C75B3C'):(isDark?'#E6DBC4':'#1F1410')), borderRadius:5, maxBarThickness:28 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip:{ backgroundColor:isDark?'#211D17':'#1F1410', padding:10, cornerRadius:8, callbacks:{label:c=>rupiah(c.parsed.y)} } },
+      scales: {
+        y: { beginAtZero:true, grid:{color:isDark?'rgba(255,255,255,0.05)':'rgba(31,20,16,0.06)'}, ticks:{color:isDark?'#948873':'#8B7355', font:{size:10}, callback:v=>rupiahShort(v)} },
+        x: { grid:{display:false}, ticks:{color:isDark?'#948873':'#8B7355', font:{size:10}} }
+      }
+    }
+  });
+
+  const txSource = dateFilter ? selectedTx : allTx;
+
+  const itemMap = {};
+  txSource.forEach(t => t.items.forEach(it => { 
+    const effPrice = getItemEffectivePrice(it);
+    if(!itemMap[it.menuId]) itemMap[it.menuId]={name:it.name,qty:0,rev:0}; 
+    itemMap[it.menuId].qty+=it.qty; 
+    itemMap[it.menuId].rev+=it.qty*effPrice; 
+  }));
+  const topItems = Object.values(itemMap).sort((a,b)=>b.qty-a.qty).slice(0,5);
+  const topList = $('#top-items-list'), topEmpty = $('#top-items-empty');
+  if (topItems.length===0) { topList.innerHTML=''; topEmpty.classList.remove('hidden'); }
+  else {
+    topEmpty.classList.add('hidden');
+    const maxQ = topItems[0].qty;
+    topList.innerHTML = topItems.map((it,i)=>`<div class="flex items-center gap-2.5">
+      <div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px]" style="background:var(--ink); color:var(--bg);">${i+1}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex justify-between text-xs"><span class="font-semibold truncate">${it.name}</span><span class="font-num font-bold ml-2">${formatQty(it.qty)}x</span></div>
+        <div class="h-1.5 rounded-full mt-1" style="background:var(--bg);"><div class="h-full rounded-full" style="width:${(it.qty/maxQ)*100}%; background:var(--accent);"></div></div>
+      </div>
+      <span class="font-num text-[11px] font-semibold" style="color:var(--muted);">${rupiahShort(it.rev)}</span>
+    </div>`).join('');
+  }
+
+  const catMap = {};
+  state.categories.forEach(c => catMap[c]=0);
+  txSource.forEach(t => t.items.forEach(it => { 
+    const m = state.menu.find(x=>x.id===it.menuId); 
+    const cat = m?.category || 'Lainnya';
+    const effPrice = getItemEffectivePrice(it);
+    catMap[cat]=(catMap[cat]||0)+it.qty*effPrice; 
+  }));
+  const catItems = Object.entries(catMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const catList = $('#cat-breakdown-list'), catEmpty = $('#cat-breakdown-empty');
+  if (catItems.length===0) { catList.innerHTML=''; catEmpty.classList.remove('hidden'); }
+  else {
+    catEmpty.classList.add('hidden');
+    const total = catItems.reduce((s,[,v])=>s+v,0);
+    catList.innerHTML = catItems.map(([cat,val],i)=>`<div>
+      <div class="flex justify-between text-xs mb-1"><span class="font-semibold">${cat}</span><span class="font-num font-bold">${rupiah(val)}</span></div>
+      <div class="h-2 rounded-full" style="background:var(--bg);"><div class="h-full rounded-full" style="width:${(val/total)*100}%; background:${CAT_PALETTE[i%CAT_PALETTE.length]};"></div></div>
+      <p class="text-[10px] mt-0.5" style="color:var(--muted);">${((val/total)*100).toFixed(1)}%</p>
+    </div>`).join('');
+  }
+}
+
+/* ===== SETTINGS ===== */
+function openSettings() {
+  showModal(`<div class="p-4 sm:p-5 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--line);">
+    <h3 class="font-display font-bold text-lg">Pengaturan Toko</h3>
+    <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+  <div class="modal-body p-4 sm:p-5 space-y-4">
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Nama Toko</label>
+      <input id="sf-name" type="text" value="${state.store.name}" class="input-field w-full mt-1.5 px-4 py-2.5 rounded-xl text-sm font-medium" />
+    </div>
+    <div>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Logo Toko</label>
+      <div class="mt-1.5 flex items-center gap-3">
+        <div id="sf-logo-preview" class="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden" style="background:var(--bg); border:1.5px dashed var(--line-2);">${state.store.logo?`<img src="${state.store.logo}" class="w-full h-full object-cover" />`:`<i data-lucide="image" class="w-5 h-5" style="color:var(--muted);"></i>`}</div>
+        <div class="flex-1 flex items-center gap-2">
+          <input id="sf-logo" type="file" accept="image/*" class="hidden" />
+          <button type="button" id="sf-logo-btn" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold">Pilih</button>
+          <button type="button" id="sf-logo-remove" class="text-xs font-semibold ${state.store.logo?'':'hidden'}" style="color:var(--danger);">Hapus</button>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2 pt-1">
+      <button onclick="closeModal()" class="btn-ghost flex-1 py-3 rounded-xl text-sm font-bold">Tutup</button>
+      <button id="sf-save" class="btn-primary flex-1 py-3 rounded-xl text-sm font-bold">Simpan</button>
+    </div>
+    <div class="pt-3 border-t" style="border-color:var(--line);">
+      <button id="sf-reset" class="btn-danger w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>Reset Semua Data</button>
+    </div>
+  </div>`);
+
+  let newLogo = state.store.logo;
+  $('#sf-logo').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    resizeImage(file, 200, data => {
+      newLogo = data;
+      $('#sf-logo-preview').innerHTML = `<img src="${data}" class="w-full h-full object-cover" />`;
+      $('#sf-logo-remove').classList.remove('hidden');
+    });
+  });
+  $('#sf-logo-remove').addEventListener('click', () => { newLogo = null; $('#sf-logo-preview').innerHTML = `<i data-lucide="image" class="w-5 h-5" style="color:var(--muted);"></i>`; $('#sf-logo-remove').classList.add('hidden'); lucide.createIcons(); });
+  $('#sf-logo-btn').addEventListener('click', () => $('#sf-logo').click());
+  $('#sf-save').addEventListener('click', () => {
+    const name = $('#sf-name').value.trim();
+    if (!name) { toast('Nama toko wajib diisi','error'); return; }
+    state.store.name = name;
+    state.store.logo = newLogo;
+    saveState(); closeModal(); updateHeader(); toast('Pengaturan disimpan','success');
+  });
+  $('#sf-reset').addEventListener('click', () => {
+    showConfirm('Reset SEMUA data? Nama toko, menu, transaksi, dan kas akan dihapus permanen.', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    });
+  });
+}
+
+/* ===== ONBOARDING ===== */
+function showOnboarding() {
+  $('#onboarding').style.display = 'flex';
+  lucide.createIcons();
+  tempLogoData = null;
+
+  $('#onb-logo-btn').addEventListener('click', () => $('#onb-logo').click());
+  $('#onb-logo').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    resizeImage(file, 200, data => {
+      tempLogoData = data;
+      $('#onb-logo-preview').innerHTML = `<img src="${data}" class="w-full h-full object-cover rounded-xl" />`;
+      $('#onb-logo-remove').classList.remove('hidden');
+    });
+  });
+  $('#onb-logo-remove').addEventListener('click', () => {
+    tempLogoData = null;
+    $('#onb-logo-preview').innerHTML = `<i data-lucide="image" class="w-5 h-5" style="color:var(--muted);"></i>`;
+    $('#onb-logo-remove').classList.add('hidden');
+    lucide.createIcons();
+  });
+
+  $('#onboarding-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('#onb-name').value.trim();
+    if (!name) { toast('Nama toko wajib diisi','error'); return; }
+    const balance = parseInt($('#onb-balance').value) || 0;
+    state.store = { name, logo: tempLogoData, startingBalance: balance };
+    state.categories = ['Makanan', 'Minuman', 'Snack'];
+    state.cashFlow = [{ id:uid(), type:'start', amount:balance, note:'Modal awal kas', timestamp: Date.now() }];
+    saveState();
+    $('#onboarding').style.display = 'none';
+    updateHeader();
+    switchTab('pos');
+    toast(`Selamat datang, ${name}!`,'success');
+  });
+}
+
+function closeMobileSheet() { $('#cart-sheet').classList.remove('open'); $('#cart-sheet-backdrop').classList.add('hidden'); }
+
+/* ===== EVENTS ===== */
+function setupEvents() {
+  $$('[data-tab]').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+  $('#menu-search').addEventListener('input', e => { state.searchQuery = e.target.value; renderMenuGrid(); });
+  $('#category-strip').addEventListener('click', e => { const b = e.target.closest('[data-category]'); if (!b) return; state.activeCategory = b.dataset.category; renderCategoryStrip(); renderMenuGrid(); });
+  $('#menu-grid').addEventListener('click', e => { const b = e.target.closest('[data-add-menu]'); if (b) addToCart(b.dataset.addMenu); });
+
+  $('#balance-toggle').addEventListener('click', toggleBalanceVisibility);
+
+  $('#history-search').addEventListener('input', () => { state.historyPage = 1; renderHistory(); });
+  $('#history-date-filter').addEventListener('change', () => { state.historyPage = 1; renderHistory(); });
+  $('#history-clear-date-btn').addEventListener('click', () => { $('#history-date-filter').value = ''; updateDateInputStyle($('#history-date-filter')); state.historyPage = 1; renderHistory(); });
+  
+  $('#cash-date-filter').addEventListener('change', () => { state.cashPage = 1; renderCash(); });
+  $('#cash-clear-date-btn').addEventListener('click', () => { $('#cash-date-filter').value = ''; updateDateInputStyle($('#cash-date-filter')); state.cashPage = 1; renderCash(); });
+  
+  $('#reports-date-filter').addEventListener('change', renderReports);
+  $('#reports-clear-date-btn').addEventListener('click', () => { $('#reports-date-filter').value = ''; updateDateInputStyle($('#reports-date-filter')); renderReports(); });
+
+  document.addEventListener('click', e => {
+    const m = e.target.closest('[data-qty-minus]'); if (m) { changeQty(m.dataset.qtyMinus, -1); return; }
+    const p = e.target.closest('[data-qty-plus]'); if (p) { changeQty(p.dataset.qtyPlus, 1); return; }
+    if (e.target.closest('#checkout-btn')) { openCheckoutModal(); return; }
+    const em = e.target.closest('[data-edit-menu]'); if (em) { openMenuForm(em.dataset.editMenu); return; }
+    const dm = e.target.closest('[data-del-menu]'); if (dm) { deleteMenu(dm.dataset.delMenu); return; }
+    const ec = e.target.closest('[data-edit-category]'); if (ec) { openCategoryForm(ec.dataset.editCategory); return; }
+    const dc = e.target.closest('[data-del-category]'); if (dc) { deleteCategory(dc.dataset.delCategory); return; }
+    const ta = e.target.closest('[data-toggle-avail]'); if (ta) { const m2 = state.menu.find(x=>x.id===ta.dataset.toggleAvail); if(m2){m2.available=!m2.available;saveState();renderMenuManagement();toast(m2.available?'Menu tersedia':'Menu ditandai habis','info');} return; }
+    const vt = e.target.closest('[data-view-tx]'); if (vt) { viewTransaction(vt.dataset.viewTx); return; }
+  });
+
+  $('#mobile-cart-btn').addEventListener('click', () => { $('#cart-sheet').classList.add('open'); $('#cart-sheet-backdrop').classList.remove('hidden'); });
+  $('#close-cart-sheet').addEventListener('click', closeMobileSheet);
+  $('#cart-sheet-backdrop').addEventListener('click', closeMobileSheet);
+
+  $('#add-menu-btn').addEventListener('click', () => openMenuForm());
+  $('#add-category-btn').addEventListener('click', () => openCategoryForm());
+  $('#clear-history-btn').addEventListener('click', () => {
+    if (state.transactions.length===0) { toast('Tidak ada riwayat','info'); return; }
+    showConfirm('Hapus semua riwayat transaksi?', () => {
+      state.transactions = [];
+      state.cashFlow = state.cashFlow.filter(f => f.type !== 'sale');
+      state.historyPage = 1;
+      saveState(); renderHistory(); updateHeader();
+      toast('Riwayat dihapus','info');
+    });
+  });
+
+  $('#cash-in-btn').addEventListener('click', () => openCashForm('in'));
+  $('#cash-out-btn').addEventListener('click', () => openCashForm('out'));
+  $('#cash-edit-start-btn').addEventListener('click', openEditStartBalance);
+  $('#clear-cashflow-btn').addEventListener('click', () => {
+    showConfirm('Reset arus kas? Modal awal dikembalikan ke nilai saat ini.', () => {
+      state.cashFlow = [{ id:uid(), type:'start', amount:state.store.startingBalance, note:'Modal awal kas', timestamp: Date.now() }];
+      state.cashPage = 1;
+      saveState(); renderCash(); updateHeader();
+      toast('Arus kas direset','info');
+    });
+  });
+
+  document.addEventListener('input', e => {
+    const inp = e.target.closest('[data-qty-input]');
+    if (!inp) return;
+    
+    let val = inp.value.replace(/[^\d.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+    inp.value = val.slice(0, 7);
+
+    const menuId = inp.dataset.qtyInput;
+    const item = state.cart.find(c => c.menuId === menuId);
+    if (!item) return;
+    const v = parseFloat(inp.value);
+    if (!isNaN(v) && v > 0) {
+      item.qty = v;
+      const itemDiv = inp.closest('.cart-item');
+      const priceEl = itemDiv?.querySelector('.cart-item-price');
+      if (priceEl) priceEl.innerHTML = formatCartItemPrice(item);
+      updateCartSummaryLive();
+      updateMobileCartButton();
+      updateCartBadgeLive(menuId, v);
+    }
+  });
+
+  document.addEventListener('change', e => {
+    const inp = e.target.closest('[data-qty-input]');
+    if (!inp) return;
+    const menuId = inp.dataset.qtyInput;
+    let v = parseFloat(inp.value) || 0;
+    const item = state.cart.find(c => c.menuId === menuId);
+    if (!item) return;
+    if (v < 0.001 || isNaN(v)) {
+      v = 1;
+      item.qty = v;
+      inp.value = v;
+      const itemDiv = inp.closest('.cart-item');
+      const priceEl = itemDiv?.querySelector('.cart-item-price');
+      if (priceEl) priceEl.innerHTML = formatCartItemPrice(item);
+      updateCartSummaryLive();
+      updateMobileCartButton();
+      updateCartBadgeLive(menuId, v);
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-qty-input]')) {
+      e.target.blur();
+    }
+  });
+
+  $('#theme-toggle').addEventListener('click', toggleTheme);
+  $('#store-info-btn').addEventListener('click', openSettings);
+}
+
+/* ===== INIT ===== */
+function init() {
+  loadState();
+  applyTheme();
+
+  const toggleIcon = $('#balance-toggle-icon');
+  if (toggleIcon) {
+    toggleIcon.setAttribute('data-lucide', state.balanceHidden ? 'eye-off' : 'eye');
+    const btn = $('#balance-toggle');
+    if (btn) btn.title = state.balanceHidden ? 'Tampilkan saldo' : 'Sembunyikan saldo';
+  }
+
+  setupEvents();
+  initDateInputs();
+
+  if (!state.store.name) {
+    showOnboarding();
+  } else {
+    updateHeader();
+    switchTab('pos');
+  }
+  setInterval(updateHeader, 60000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+window.addEventListener('load', () => {
+  const loader = document.getElementById('app-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => loader.remove(), 300);
+  }
+});
+</script>
+</body>
+</html>

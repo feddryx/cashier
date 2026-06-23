@@ -2,6 +2,8 @@
 
 Aplikasi kasir (Point of Sale / POS) berbasis HTML, CSS, dan JavaScript yang berjalan sepenuhnya di browser tanpa server. Data tersimpan secara lokal menggunakan Local Storage sehingga dapat digunakan secara offline. Dibuat dengan LLM.
 
+### [Jalankan Secara Online](https://feddryx.github.io/cashier/cashier.html)
+
 ## Fitur Utama
 
 ### Setup Toko

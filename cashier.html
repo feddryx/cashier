@@ -180,7 +180,7 @@ body {
 .toast { animation: toastIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .toast.removing { animation: toastOut 0.22s ease-in forwards; }
 
-@keyframes tabIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes tabIn { from { opacity: 0; filter: blur(4px); } to { opacity: 1; filter: blur(0px); } }
 .tab-content { animation: tabIn 0.22s ease-out; }
 
 .receipt { background: white; color: #1F1410; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.25); }
@@ -216,7 +216,7 @@ body {
 
 .icon-tile { border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-.mobile-pad { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+.mobile-pad { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
 @media (min-width: 1024px) { .mobile-pad { padding-bottom: 2rem; } }
 
 @media (prefers-reduced-motion: reduce) {
@@ -231,7 +231,6 @@ input[type="date"].date-empty {
   min-width: 40px;
   padding-left: 0;
   padding-right: 0;
-  color: transparent;
 }
 input[type="date"].date-empty::-webkit-datetime-edit {
   display: none;
@@ -360,9 +359,19 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator {
         <input id="onb-balance" type="number" inputmode="numeric" value="0" min="0" class="input-field w-full mt-1.5 px-4 py-3 rounded-xl text-sm font-num font-bold" />
         <p class="text-xs mt-1" style="color:var(--muted);">Boleh diisi 0, bisa diatur nanti di tab Kas</p>
       </div>
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Basis Data (OPSIONAL)</label>
+        <div class="mt-1.5 grid gap-2">
+          <button type="button" id="onb-import" class="data-action-btn import justify-center">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Impor Data</span>
+          </button>
+        </div>
+        <input id="onb-import-file" type="file" accept="application/json" class="hidden" />
+        <p class="text-xs mt-1" style="color:var(--muted);">Gunakan kembali data yang telah tersedia</p>
+      </div>
       <button type="submit" class="btn-primary w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
         Mulai Berjualan
-        <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </button>
     </form>
   </div>
@@ -444,23 +453,19 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator {
         <div class="px-4 py-3.5 flex items-center justify-between flex-shrink-0" style="background:var(--ink); color:var(--bg);">
           <div class="flex items-center gap-2">
             <i data-lucide="shopping-basket" class="w-4 h-4"></i>
-            <h3 class="font-display font-bold text-sm">Pesanan</h3>
+            <h3 class="font-display font-bold text-sm">Pesanan Saat Ini</h3>
           </div>
         </div>
         <div id="cart-desktop" class="cart-container flex-1 flex flex-col min-h-0"></div>
       </div>
     </div>
 
-    <div id="mobile-cart-bar" class="lg:hidden fixed left-3 right-3 z-30 hidden" style="bottom: calc(4.5rem + env(safe-area-inset-bottom));">
-      <button id="mobile-cart-btn" class="w-full flex items-center justify-between gap-3 pl-4 pr-2 py-2 rounded-2xl shadow-lg" style="background:var(--ink); color:var(--bg);">
-        <div class="flex items-center gap-2.5">
-          <div class="relative w-8 h-8 flex items-center justify-center">
-            <i data-lucide="shopping-basket" class="w-5 h-5"></i>
-            <span id="mobile-cart-count" class="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:var(--accent); color:white;">0</span>
-          </div>
-          <span class="font-bold text-sm">Lihat Keranjang</span>
+    <div id="mobile-cart-bar" class="lg:hidden fixed right-3 z-30 hidden" style="bottom: calc(4.5rem + env(safe-area-inset-bottom));">
+      <button id="mobile-cart-btn" class="flex items-center gap-2 px-4 py-3 rounded-2xl shadow-lg" style="background:var(--ink); color:var(--bg);">
+        <div class="relative w-6 h-6 flex items-center justify-center">
+          <i data-lucide="shopping-basket" class="w-5 h-5"></i>
+          <span id="mobile-cart-count" class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center" style="background:var(--accent); color:white;">0</span>
         </div>
-        <div class="font-num font-bold text-sm bg-white/15 px-3 py-1.5 rounded-xl" id="mobile-cart-total">Rp 0</div>
       </button>
     </div>
   </section>
@@ -502,7 +507,7 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator {
         <p class="text-xs sm:text-sm" style="color:var(--muted);">Semua penjualan yang telah diselesaikan</p>
       </div>
       <div class="flex gap-2 flex-wrap">
-        <div class="relative flex-1 min-w-[240px]">
+        <div class="relative flex-1">
           <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--muted);"></i>
           <input type="text" id="history-search" placeholder="Cari nama / ID transaksi..." class="input-field w-full pl-9 pr-3 py-2 rounded-lg text-sm font-medium">
         </div>
@@ -696,7 +701,7 @@ input[type="date"]:hover::-webkit-calendar-picker-indicator {
   <div class="p-3.5 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--line);">
     <div class="flex items-center gap-2">
       <i data-lucide="shopping-basket" class="w-5 h-5"></i>
-      <h3 class="font-display font-bold text-base">Pesanan</h3>
+      <h3 class="font-display font-bold text-base">Pesanan Saat Ini</h3>
     </div>
     <button id="close-cart-sheet" class="w-8 h-8 rounded-full flex items-center justify-center" style="background:var(--bg);">
       <i data-lucide="x" class="w-4 h-4"></i>
@@ -1071,7 +1076,7 @@ function renderCartSummary() {
   const count = cartCount();
   return `<div class="p-3 sm:p-4 border-t flex-shrink-0" style="border-color:var(--line); background:var(--bg);">
     <div class="space-y-1 text-xs sm:text-sm">
-      <div class="flex justify-between"><span style="color:var(--muted);">Subtotal (<span class="cart-count-display">${formatQty(count)}</span> qty)</span><span class="font-num font-semibold cart-subtotal-display">${rupiah(sub)}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted);">Subtotal (<span class="cart-count-display">${formatQty(count)}</span> item)</span><span class="font-num font-semibold cart-subtotal-display">${rupiah(sub)}</span></div>
     </div>
     <button id="checkout-btn" class="btn-accent w-full mt-3 py-2.5 sm:py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2" ${state.cart.length===0?'disabled':''}>
       <i data-lucide="credit-card" class="w-4 h-4"></i>Proses Pembayaran
@@ -1201,24 +1206,24 @@ function openCheckoutModal() {
     list.innerHTML = fees.map((f, idx) => `
       <div class="fee-row flex flex-col gap-2 p-2.5 rounded-xl" style="background:var(--bg); border:1.5px solid var(--line);">
           <div class="flex items-center gap-2">
-              <select data-fee-idx="${idx}" data-field="name" class="input-field flex-1 px-3 py-2 rounded-lg text-xs font-semibold">
+              <select data-fee-idx="${idx}" data-field="name" class="input-field min-w-0 flex-1 px-3 py-2 rounded-lg text-xs font-semibold">
                   <option value="Pajak" ${f.name==='Pajak' && !f.isCustom?'selected':''}>Pajak</option>
                   <option value="Service Charge" ${f.name==='Service Charge' && !f.isCustom?'selected':''}>Service Charge</option>
                   <option value="Biaya Pengiriman" ${f.name==='Biaya Pengiriman' && !f.isCustom?'selected':''}>Biaya Pengiriman</option>
                   <option value="Tip" ${f.name==='Tip' && !f.isCustom?'selected':''}>Tip</option>
                   <option value="custom" ${f.isCustom?'selected':''}>Lainnya...</option>
               </select>
-              <input type="text" data-fee-idx="${idx}" data-field="customName" value="${f.customName||''}" placeholder="Nama Biaya" class="input-field flex-1 px-3 py-2 rounded-lg text-xs font-semibold ${f.isCustom?'':'hidden'}" />
+              <input type="text" data-fee-idx="${idx}" data-field="customName" value="${f.customName||''}" placeholder="Nama Biaya" class="input-field min-w-0 flex-1 px-3 py-2 rounded-lg text-xs font-semibold ${f.isCustom?'':'hidden'}" />
               <button data-remove-fee="${idx}" class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--danger-soft); color:var(--danger);">
                   <i data-lucide="x" class="w-4 h-4"></i>
               </button>
           </div>
           <div class="flex gap-2">
-              <select data-fee-idx="${idx}" data-field="type" class="input-field px-2 py-1.5 rounded-lg text-xs font-semibold">
+              <select data-fee-idx="${idx}" data-field="type" class="input-field min-w-0 flex-1 px-3 py-2 rounded-lg text-xs font-semibold">
                   <option value="percent" ${f.type==='percent'?'selected':''}>Persen (%)</option>
                   <option value="fixed" ${f.type==='fixed'?'selected':''}>Nominal (Rp)</option>
               </select>
-              <input type="number" inputmode="decimal" data-fee-idx="${idx}" data-field="value" value="${f.value||''}" placeholder="0" class="input-field flex-1 px-3 py-1.5 rounded-lg text-sm font-num font-bold" />
+              <input type="number" inputmode="decimal" data-fee-idx="${idx}" data-field="value" value="${f.value||''}" placeholder="0" class="input-field min-w-0 flex-1 px-3 py-1.5 rounded-lg text-sm font-num font-bold" />
           </div>
           <label class="flex items-center gap-1.5 cursor-pointer px-3 h-[38px] rounded-lg flex-shrink-0" style="background:var(--surface); border:1.5px solid var(--line); color:var(--ink-2);">
               <input type="checkbox" data-fee-idx="${idx}" data-field="mode" ${f.mode==='include'?'checked':''} class="w-4 h-4" style="accent-color:var(--accent);" />
@@ -1848,14 +1853,14 @@ function renderHistory() {
       </div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
-          <p class="font-bold text-xs sm:text-sm truncate">${t.transactionName ? t.transactionName + ' • ' : ''}#${t.id.toUpperCase()}</p>
+          <p class="font-bold text-xs sm:text-sm truncate">${t.transactionName ? t.transactionName + '  •  ' : ''}#${t.id.toUpperCase()}</p>
           <span class="badge" style="background:${mc}22; color:${mc};">${ml}</span>
         </div>
-        <p class="text-[11px] mt-0.5 truncate" style="color:var(--muted);">${t.items.length} item • ${fmtTime(t.timestamp)}</p>
+        <p class="text-[11px] mt-0.5 truncate" style="color:var(--muted);">${t.items.length} menu  •  ${fmtTime(t.timestamp)}</p>
       </div>
       <div class="text-right flex-shrink-0">
         <p class="font-num font-bold text-sm sm:text-base">${rupiah(t.total)}</p>
-        <p class="text-[10px]" style="color:var(--muted);">${formatQty(t.items.reduce((s,i)=>s+i.qty,0))} qty</p>
+        <p class="text-[10px]" style="color:var(--muted);">${formatQty(t.items.reduce((s,i)=>s+i.qty,0))} item</p>
       </div>
     </button>`;
   }).join('');
@@ -2120,7 +2125,7 @@ function exportData() {
   toast('Data berhasil diekspor', 'success');
 }
 
-function importData(file) {
+function importData(file, isWelcome = false) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
@@ -2129,7 +2134,7 @@ function importData(file) {
         toast('Format file tidak valid', 'error');
         return;
       }
-      showConfirm('Impor data akan menimpa SEMUA data saat ini. Lanjutkan?', () => {
+      if (isWelcome) {
         state.store = data.store;
         state.menu = data.menu;
         state.categories = data.categories || [];
@@ -2146,7 +2151,27 @@ function importData(file) {
         switchTab('pos');
         closeModal();
         toast('Data berhasil diimpor', 'success');
-      }, "Timpa");
+        return;
+      } else {
+        showConfirm('Impor data akan menimpa SEMUA data saat ini. Lanjutkan?', () => {
+          state.store = data.store;
+          state.menu = data.menu;
+          state.categories = data.categories || [];
+          state.transactions = data.transactions || [];
+          state.cashFlow = data.cashFlow || [];
+          state.settings = data.settings || { taxRate: 0 };
+          if (data.theme) state.theme = data.theme;
+          if (data.balanceHidden !== undefined) state.balanceHidden = data.balanceHidden;
+          state.cart = [];
+          prevCartIds = new Set();
+          saveState();
+          applyTheme();
+          updateHeader();
+          switchTab('pos');
+          closeModal();
+          toast('Data berhasil diimpor', 'success');
+        }, "Timpa");
+      }
     } catch(err) {
       toast('Gagal membaca file: ' + err.message, 'error');
     }
@@ -2181,11 +2206,11 @@ function openSettings() {
       <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Basis Data</label>
       <div class="mt-1.5 grid grid-cols-2 gap-2">
         <button type="button" id="sf-export" class="data-action-btn export justify-center">
-          <i data-lucide="download" class="w-4 h-4"></i>
+          <i data-lucide="upload" class="w-4 h-4"></i>
           <span>Ekspor Data</span>
         </button>
         <button type="button" id="sf-import" class="data-action-btn import justify-center">
-          <i data-lucide="upload" class="w-4 h-4"></i>
+          <i data-lucide="download" class="w-4 h-4"></i>
           <span>Impor Data</span>
         </button>
       </div>
@@ -2256,7 +2281,18 @@ function showOnboarding() {
     $('#onb-logo-remove').classList.add('hidden');
     lucide.createIcons();
   });
+  $('#onb-import').addEventListener('click', () => {
+    $('#onb-import-file').click();
+  });
 
+  $('#onb-import-file').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) {
+      $('#onboarding').style.display = 'none';
+      importData(file, true);
+    }
+    e.target.value = '';
+  });
   $('#onboarding-form').addEventListener('submit', e => {
     e.preventDefault();
     const name = $('#onb-name').value.trim();

@@ -242,14 +242,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 40px;
   opacity: 0;
   cursor: pointer;
 }
 
 input[type="date"].date-empty {
+  height: 36px;
   width: 40px;
-  min-width: 40px;
   padding-left: 0;
   padding-right: 0;
   background-position: center;
@@ -366,7 +365,7 @@ input[type="date"].date-empty::-webkit-calendar-picker-indicator {
         <p class="text-xs mt-1" style="color:var(--muted);">Boleh diisi 0, bisa diatur nanti di tab Kas</p>
       </div>
       <div>
-        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Basis Data (OPSIONAL)</label>
+        <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Kelola Data (OPSIONAL)</label>
         <div class="mt-1.5 grid gap-2">
           <button type="button" id="onb-import" class="data-action-btn import justify-center">
             <i data-lucide="download" class="w-4 h-4"></i>
@@ -2214,14 +2213,14 @@ function openSettings() {
         <div id="sf-logo-preview" class="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden" style="background:var(--bg); border:1.5px dashed var(--line-2);">${state.store.logo?`<img src="${state.store.logo}" class="w-full h-full object-cover" />`:`<i data-lucide="image" class="w-5 h-5" style="color:var(--muted);"></i>`}</div>
         <div class="flex-1 flex items-center gap-2">
           <input id="sf-logo" type="file" accept="image/*" class="hidden" />
-          <button type="button" id="sf-logo-btn" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold">Pilih</button>
+          <button type="button" id="sf-logo-btn" class="btn-ghost px-3 py-2 rounded-lg text-xs font-semibold">Ubah Gambar</button>
           <button type="button" id="sf-logo-remove" class="text-xs font-semibold ${state.store.logo?'':'hidden'}" style="color:var(--danger);">Hapus</button>
         </div>
       </div>
     </div>
 
     <div>
-      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Basis Data</label>
+      <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--muted);">Kelola Data</label>
       <div class="mt-1.5 grid grid-cols-2 gap-2">
         <button type="button" id="sf-export" class="data-action-btn export justify-center">
           <i data-lucide="upload" class="w-4 h-4"></i>
